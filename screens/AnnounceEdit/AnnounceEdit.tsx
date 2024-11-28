@@ -2,7 +2,14 @@
 
 // Import des dépendances React et React Native nécessaires
 import React, { useEffect, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import globalStyles from "../../globals/globalStyles";
 import {
@@ -17,6 +24,7 @@ import {
   ModalImage,
   ErrorText,
   SuccessText,
+  Loading,
 } from "../../components";
 import { colors } from "../../globals/colors";
 import { ms } from "react-native-size-matters";
@@ -48,46 +56,17 @@ import { useForm } from "react-hook-form";
 import * as ImagePicker from "expo-image-picker";
 import api from "../../axios/api";
 import { uploadImage } from "../../lib/cloundinary";
+import { annonceState, annonceWithUserInterface } from "../../types/annonce";
+import { getAnnonceInfo } from "../../utils";
+import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { resetImagesLoad } from "../../redux/features/imagesLoads";
 
 // Définition des interfaces pour les props et le formulaire
 interface AnnounceEditProps {
   route: {
     params: {
-      item: {
-        annonce: {
-          annonceId: number;
-          title: string;
-          images: Array<{ imageUrl: string }>;
-          transaction: string;
-          vehicle: {
-            vehicleId: number;
-            condition: string;
-            description: string;
-            mark: string;
-            model: string;
-            year: number;
-            gearbox: string;
-            fuelType: string;
-            klmCounter: string;
-            climatisation: string;
-            type: string;
-          };
-          price: string;
-          city: string;
-          phoneNumber: string;
-          quantity: number;
-          annonceState: string;
-          endDate: string;
-          premium: boolean;
-          premiumExpiration: string;
-        };
-        user: {
-          userId: number;
-          firstName: string;
-          lastName: string;
-          urlImageUser: string;
-        };
-      };
+      item: annonceWithUserInterface;
     };
   };
 }
@@ -158,7 +137,9 @@ const fuelTypeItems = [
 // Composant principal pour l'édition d'une annonce
 const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
   const { item } = route.params;
+  const [actualItem, setActualItem] = useState(item);
   const navigation = useNavigation<NavigationProp<any>>();
+  const [numberImagesLoaded, setNumberImagesLoaded] = useState(0);
 
   // Configuration du formulaire avec React Hook Form
   const {
@@ -169,29 +150,29 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
     getValues,
   } = useForm<AnnounceEditData>({
     defaultValues: {
-      title: item.annonce.title,
-      price: item.annonce.price.toString(),
-      type: item.annonce.vehicle.type,
-      transaction: item.annonce.transaction,
-      condition: item.annonce.vehicle.condition,
-      quantity: item.annonce.quantity?.toString(),
-      city: item.annonce.city,
-      mark: item.annonce.vehicle.mark,
-      model: item.annonce.vehicle.model,
-      year: item.annonce.vehicle.year?.toString(),
-      gearbox: item.annonce.vehicle.gearbox,
-      climatisation: item.annonce.vehicle.climatisation,
-      klm_counter: item.annonce.vehicle.klmCounter?.toString(),
-      phoneNumber: item.annonce.phoneNumber,
-      description: item.annonce.vehicle.description,
-      fuelType: item.annonce.vehicle.fuelType,
-      images: item.annonce.images,
+      title: actualItem.annonce.title,
+      price: actualItem.annonce.price.toString(),
+      type: actualItem.annonce.vehicle.type,
+      transaction: actualItem.annonce.transaction,
+      condition: actualItem.annonce.vehicle.condition,
+      quantity: actualItem.annonce.quantity?.toString(),
+      city: actualItem.annonce.city,
+      mark: actualItem.annonce.vehicle.mark,
+      model: actualItem.annonce.vehicle.model,
+      year: actualItem.annonce.vehicle.year?.toString(),
+      gearbox: actualItem.annonce.vehicle.gearbox,
+      climatisation: actualItem.annonce.vehicle.climatisation,
+      klm_counter: actualItem.annonce.vehicle.klmCounter?.toString(),
+      phoneNumber: actualItem.annonce.phoneNumber,
+      description: actualItem.annonce.vehicle.description,
+      fuelType: actualItem.annonce.vehicle.fuelType,
+      images: actualItem.annonce.images,
     },
   });
 
   // États locaux pour gérer les différents aspects de l'interface
   const [successMessage, setSuccessMessage] = useState("");
-  const [images, setImages] = useState(item.annonce.images);
+  const [images, setImages] = useState(actualItem.annonce.images);
   const [expirationDate, setExpirationDate] = useState("");
   const [premiumExpirationDate, setPremiumExpirationDate] = useState("");
   const [imageError, setImageError] = useState(false);
@@ -206,13 +187,22 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
   const [successImage, setSuccessImage] = useState("");
   const [errorImage, setErrorImage] = useState("");
 
+  const [loading, setLoading] = useState(true);
+  const [disableBtn, setDisableBtn] = useState(false);
+
+  const numberOfImagesLoaded = useSelector(
+    (state: any) => state.imagesLoad.numberOfImagesLoaded
+  );
+  const dispatch = useDispatch();
+
   // Gestion de la soumission du formulaire
   const onSubmit = async (data: AnnounceEditData) => {
+    setDisableBtn(true);
     try {
       // Préparation des données pour la mise à jour de l'annonce
       const annonceUpdateDTO = {
         annonce: {
-          annonceId: item.annonce.annonceId,
+          annonceId: actualItem.annonce.annonceId,
           title: data.title,
           price: data.price,
           quantity: parseInt(data.quantity || "0"),
@@ -237,9 +227,13 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
 
       // Logique d'envoi des données au serveur
       const response = await api.put(
-        `/annonces/${item.annonce.annonceId}`,
+        `/annonces/${actualItem.annonce.annonceId}`,
         annonceUpdateDTO
       );
+
+      const newAnnonceWithUser = await response.data.data;
+      const annonceBasicInfo = getAnnonceInfo(newAnnonceWithUser);
+      setActualItem(annonceBasicInfo);
 
       if (response.status === 200) {
         setSuccessMessage("Modification réussie !");
@@ -253,6 +247,10 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
       setError("Une erreur est survenue lors de la mise à jour de l'annonce");
       handleTimeOutError();
     }
+    setDisableBtn(false);
+    setTimeout(() => {
+      reset({}, { keepValues: true });
+    }, 50);
   };
 
   // Fonctions de gestion des images
@@ -309,35 +307,36 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
         setImages(newImages);
 
         // Mise à jour via l'API
-        const annonceUpdateDTO = {
-          annonce: {
-            annonceId: item.annonce.annonceId,
-            title: getValues("title"),
-            price: getValues("price"),
-            quantity: parseInt(getValues("quantity") || "0"),
-            transaction: getValues("transaction"),
-            city: getValues("city"),
-            phoneNumber: getValues("phoneNumber"),
-          },
-          vehicle: {
-            type: getValues("type"),
-            mark: getValues("mark"),
-            model: getValues("model"),
-            year: parseInt(getValues("year") || "0"),
-            gearbox: getValues("gearbox"),
-            climatisation: getValues("climatisation"),
-            condition: getValues("condition"),
-            fuelType: getValues("fuelType"),
-            klmCounter: parseInt(getValues("klm_counter") || "0"),
-            description: getValues("description"),
-          },
-          images: newImages.map((image) => image.imageUrl),
-        };
-
         const response = await api.put(
-          `/annonces/${item.annonce.annonceId}`,
-          annonceUpdateDTO
+          `/annonces/${actualItem.annonce.annonceId}`,
+          {
+            annonce: {
+              annonceId: actualItem.annonce.annonceId,
+              title: getValues("title"),
+              price: getValues("price"),
+              quantity: parseInt(getValues("quantity") || "0"),
+              transaction: getValues("transaction"),
+              city: getValues("city"),
+              phoneNumber: getValues("phoneNumber"),
+            },
+            vehicle: {
+              type: getValues("type"),
+              mark: getValues("mark"),
+              model: getValues("model"),
+              year: parseInt(getValues("year") || "0"),
+              gearbox: getValues("gearbox"),
+              climatisation: getValues("climatisation"),
+              condition: getValues("condition"),
+              fuelType: getValues("fuelType"),
+              klmCounter: parseInt(getValues("klm_counter") || "0"),
+              description: getValues("description"),
+            },
+            images: newImages.map((image) => image.imageUrl),
+          }
         );
+
+        const annonceBasicInfo = getAnnonceInfo(await response.data.data);
+        setActualItem(annonceBasicInfo);
 
         if (response.status !== 200) {
           setErrorImage("Erreur lors de la mise à jour");
@@ -381,35 +380,36 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
         setImages(newImages);
 
         // Mise à jour via l'API
-        const annonceUpdateDTO = {
-          annonce: {
-            annonceId: item.annonce.annonceId,
-            title: getValues("title"),
-            price: getValues("price"),
-            quantity: parseInt(getValues("quantity") || "0"),
-            transaction: getValues("transaction"),
-            city: getValues("city"),
-            phoneNumber: getValues("phoneNumber"),
-          },
-          vehicle: {
-            type: getValues("type"),
-            mark: getValues("mark"),
-            model: getValues("model"),
-            year: parseInt(getValues("year") || "0"),
-            gearbox: getValues("gearbox"),
-            climatisation: getValues("climatisation"),
-            condition: getValues("condition"),
-            fuelType: getValues("fuelType"),
-            klmCounter: parseInt(getValues("klm_counter") || "0"),
-            description: getValues("description"),
-          },
-          images: newImages.map((image) => image.imageUrl),
-        };
-
         const response = await api.put(
-          `/annonces/${item.annonce.annonceId}`,
-          annonceUpdateDTO
+          `/annonces/${actualItem.annonce.annonceId}`,
+          {
+            annonce: {
+              annonceId: actualItem.annonce.annonceId,
+              title: getValues("title"),
+              price: getValues("price"),
+              quantity: parseInt(getValues("quantity") || "0"),
+              transaction: getValues("transaction"),
+              city: getValues("city"),
+              phoneNumber: getValues("phoneNumber"),
+            },
+            vehicle: {
+              type: getValues("type"),
+              mark: getValues("mark"),
+              model: getValues("model"),
+              year: parseInt(getValues("year") || "0"),
+              gearbox: getValues("gearbox"),
+              climatisation: getValues("climatisation"),
+              condition: getValues("condition"),
+              fuelType: getValues("fuelType"),
+              klmCounter: parseInt(getValues("klm_counter") || "0"),
+              description: getValues("description"),
+            },
+            images: newImages.map((image) => image.imageUrl),
+          }
         );
+
+        const annonceBasicInfo = getAnnonceInfo(await response.data.data);
+        setActualItem(annonceBasicInfo);
 
         if (response.status !== 200) {
           setErrorImage("Erreur lors de la mise à jour");
@@ -453,35 +453,36 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
       setImages(newImages);
 
       // Mise à jour via l'API
-      const annonceUpdateDTO = {
-        annonce: {
-          annonceId: item.annonce.annonceId,
-          title: getValues("title"),
-          price: getValues("price"),
-          quantity: parseInt(getValues("quantity") || "0"),
-          transaction: getValues("transaction"),
-          city: getValues("city"),
-          phoneNumber: getValues("phoneNumber"),
-        },
-        vehicle: {
-          type: getValues("type"),
-          mark: getValues("mark"),
-          model: getValues("model"),
-          year: parseInt(getValues("year") || "0"),
-          gearbox: getValues("gearbox"),
-          climatisation: getValues("climatisation"),
-          condition: getValues("condition"),
-          fuelType: getValues("fuelType"),
-          klmCounter: parseInt(getValues("klm_counter") || "0"),
-          description: getValues("description"),
-        },
-        images: newImages.map((image) => image.imageUrl),
-      };
-
       const response = await api.put(
-        `/annonces/${item.annonce.annonceId}`,
-        annonceUpdateDTO
+        `/annonces/${actualItem.annonce.annonceId}`,
+        {
+          annonce: {
+            annonceId: actualItem.annonce.annonceId,
+            title: getValues("title"),
+            price: getValues("price"),
+            quantity: parseInt(getValues("quantity") || "0"),
+            transaction: getValues("transaction"),
+            city: getValues("city"),
+            phoneNumber: getValues("phoneNumber"),
+          },
+          vehicle: {
+            type: getValues("type"),
+            mark: getValues("mark"),
+            model: getValues("model"),
+            year: parseInt(getValues("year") || "0"),
+            gearbox: getValues("gearbox"),
+            climatisation: getValues("climatisation"),
+            condition: getValues("condition"),
+            fuelType: getValues("fuelType"),
+            klmCounter: parseInt(getValues("klm_counter") || "0"),
+            description: getValues("description"),
+          },
+          images: newImages.map((image) => image.imageUrl),
+        }
       );
+
+      const annonceBasicInfo = getAnnonceInfo(await response.data.data);
+      setActualItem(annonceBasicInfo);
 
       if (response.status !== 200) {
         setErrorImage("Erreur lors de la mise à jour");
@@ -489,7 +490,7 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
         return;
       }
 
-      setSuccessImage("Image supprimée avec succès !");
+      setSuccessImage("Image retirée avec succès !");
       handleTimeOutSuccessImage();
       setManipIndex(null);
     } catch (error) {
@@ -499,19 +500,48 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
       handleTimeOutErrorImage();
     }
   };
+
+  const handleRemoveAnnonce = async () => {
+    try {
+      const formToSend = {
+        annonce: {
+          annonceState: "INACTIVE",
+        },
+      };
+
+      const response = await api.put(
+        `/annonces/${actualItem.annonce.annonceId}`,
+        formToSend
+      );
+
+      if (response.status === 200) {
+        console.log("Opération réussie");
+      }
+    } catch (error) {
+      if (!error.response) {
+        console.error("Erreur de connexion", error);
+      } else {
+        console.error(error.response.data.message, error);
+      }
+    }
+  };
+
   // Effet pour mettre à jour les dates d'expiration périodiquement
   useEffect(() => {
-    if (item.annonce.annonceState !== "INACTIVE") {
-      formatDateTime(item.annonce.endDate, "expirationDate");
-      if (item.annonce.premium) {
-        formatDateTime(item.annonce.premiumExpiration, "premiumExpirationDate");
+    if (actualItem.annonce.annonceState !== "INACTIVE") {
+      formatDateTime(actualItem.annonce.endDate, "expirationDate");
+      if (actualItem.annonce.premium) {
+        formatDateTime(
+          actualItem.annonce.premiumExpiration,
+          "premiumExpirationDate"
+        );
       }
 
       const id = setInterval(() => {
-        formatDateTime(item.annonce.endDate, "expirationDate");
-        if (item.annonce.premium) {
+        formatDateTime(actualItem.annonce.endDate, "expirationDate");
+        if (actualItem.annonce.premium) {
           formatDateTime(
-            item.annonce.premiumExpiration,
+            actualItem.annonce.premiumExpiration,
             "premiumExpirationDate"
           );
         }
@@ -520,6 +550,13 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
       return () => clearInterval(id);
     }
   }, []);
+
+  useEffect(() => {
+    if (numberOfImagesLoaded >= 1) {
+      setLoading(false);
+      dispatch(resetImagesLoad());
+    }
+  }, [numberOfImagesLoaded]);
 
   // Fonction utilitaire pour formater les dates d'expiration
   const formatDateTime = (expirationDate: string, origin: string) => {
@@ -546,592 +583,616 @@ const AnnounceEdit: React.FC<AnnounceEditProps> = ({ route }) => {
 
   // Rendu du composant avec une ScrollView comme conteneur principal
   return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
-      showsVerticalScrollIndicator={false}
-      stickyHeaderIndices={[0]}
-    >
-      <PageHeader
-        onPress={() => navigation.goBack()}
-        title={item.annonce.title}
-      />
+    <>
+      {loading && (
+        <ActivityIndicator
+          size={"large"}
+          style={{ marginTop: ms(20) }}
+          color={colors.accentTertiary}
+        />
+      )}
 
-      <ModalImage
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        handleAddImage={handleAddImage}
-        handleModifyImage={handleModifyImage}
-        handleRemoveImage={handleRemoveImage}
-        imageLoading={imageLoading}
-      />
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[0]}
+        style={loading && styles.notVisible}
+      >
+        <PageHeader
+          onPress={() => navigation.goBack()}
+          title={actualItem.annonce.title}
+        />
 
-      <View style={[globalStyles.body, { backgroundColor: colors.secondary }]}>
-        <Text
-          style={{
-            fontSize: ms(20),
-            fontFamily: "Inter-ExtraBold",
-            color: colors.textColor,
-          }}
+        <ModalImage
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+          handleAddImage={handleAddImage}
+          handleModifyImage={handleModifyImage}
+          handleRemoveImage={handleRemoveImage}
+          imageLoading={imageLoading}
+        />
+
+        <View
+          style={[globalStyles.body, { backgroundColor: colors.secondary }]}
         >
-          Modification de l'annonce
-        </Text>
-
-        {/* Section récapitulative de l'annonce */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recapitulatif</Text>
-
-          <DisplayImagesEdit allSpace={70} images={item.annonce.images} />
-
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.title}>
-            {item.annonce.title}
+          <Text
+            style={{
+              fontSize: ms(20),
+              fontFamily: "Inter-ExtraBold",
+              color: colors.textColor,
+            }}
+          >
+            Modification de l'annonce
           </Text>
 
-          <Text style={styles.subTitle}>
-            Type de véhicule:{" "}
-            <Text style={styles.subTitleContent}>
-              {item.annonce.vehicle.type}
+          {/* Section récapitulative de l'annonce */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Recapitulatif</Text>
+
+            <DisplayImagesEdit
+              allSpace={70}
+              images={actualItem.annonce.images}
+            />
+
+            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.title}>
+              {actualItem.annonce.title}
             </Text>
-          </Text>
-          <Text style={styles.subTitle}>
-            Etat du véhicule:{" "}
-            <Text style={styles.subTitleContent}>
-              {item.annonce.vehicle.condition}
-            </Text>
-          </Text>
-          <Text style={styles.subTitle}>
-            Sorte de transaction:{" "}
-            <Text style={styles.subTitleContent}>
-              {item.annonce.transaction}
-            </Text>
-          </Text>
-          <Text style={styles.subTitle}>
-            Prix:{" "}
-            <Text style={styles.subTitleContent}>{item.annonce.price}</Text>
-          </Text>
-          <Text style={styles.subTitle}>
-            Type de carburant:{" "}
-            <Text style={styles.subTitleContent}>
-              {item.annonce.vehicle.fuelType}
-            </Text>
-          </Text>
-          <Text style={styles.subTitle}>
-            Boite de transmission:{" "}
-            <Text style={styles.subTitleContent}>
-              {item.annonce.vehicle.gearbox}
-            </Text>
-          </Text>
-          {item.annonce.transaction == "Vente" && (
+
             <Text style={styles.subTitle}>
-              Quantité:{" "}
+              Type de véhicule:{" "}
               <Text style={styles.subTitleContent}>
-                {item.annonce.quantity}
+                {actualItem.annonce.vehicle.type}
               </Text>
             </Text>
-          )}
-          <Text style={styles.subTitle}>
-            Lieu de vente:{" "}
-            <Text style={styles.subTitleContent}>{item.annonce.city}</Text>
-          </Text>
-        </View>
-
-        {/* Section état de l'annonce avec gestion premium/standard */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Etat de l'annonce</Text>
-
-          {item.annonce.premium && (
-            <>
-              <View style={styles.premiumAnnonce}>
-                <Text style={styles.premiumAnnonceText}>
-                  Votre annonce est en premium
+            <Text style={styles.subTitle}>
+              Etat du véhicule:{" "}
+              <Text style={styles.subTitleContent}>
+                {actualItem.annonce.vehicle.condition}
+              </Text>
+            </Text>
+            <Text style={styles.subTitle}>
+              Sorte de transaction:{" "}
+              <Text style={styles.subTitleContent}>
+                {actualItem.annonce.transaction}
+              </Text>
+            </Text>
+            <Text style={styles.subTitle}>
+              Prix:{" "}
+              <Text style={styles.subTitleContent}>
+                {actualItem.annonce.price}
+              </Text>
+            </Text>
+            <Text style={styles.subTitle}>
+              Type de carburant:{" "}
+              <Text style={styles.subTitleContent}>
+                {actualItem.annonce.vehicle.fuelType}
+              </Text>
+            </Text>
+            <Text style={styles.subTitle}>
+              Boite de transmission:{" "}
+              <Text style={styles.subTitleContent}>
+                {actualItem.annonce.vehicle.gearbox}
+              </Text>
+            </Text>
+            {actualItem.annonce.transaction == "Vente" && (
+              <Text style={styles.subTitle}>
+                Quantité:{" "}
+                <Text style={styles.subTitleContent}>
+                  {actualItem.annonce.quantity}
                 </Text>
-                <FontAwesomeIcon
-                  icon={faCrown}
-                  size={ms(20)}
-                  color={colors.accentTertiary}
+              </Text>
+            )}
+            <Text style={styles.subTitle}>
+              Lieu de vente:{" "}
+              <Text style={styles.subTitleContent}>
+                {actualItem.annonce.city}
+              </Text>
+            </Text>
+          </View>
+
+          {/* Section état de l'annonce avec gestion premium/standard */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Etat de l'annonce</Text>
+
+            {actualItem.annonce.premium && (
+              <>
+                <View style={styles.premiumAnnonce}>
+                  <Text style={styles.premiumAnnonceText}>
+                    Votre annonce est en premium
+                  </Text>
+                  <FontAwesomeIcon
+                    icon={faCrown}
+                    size={ms(20)}
+                    color={colors.accentTertiary}
+                  />
+                </View>
+
+                <Text style={styles.premiumAnnonceExpirateDate}>
+                  Temps restant: {premiumExpirationDate}
+                </Text>
+              </>
+            )}
+
+            {actualItem.annonce.annonceState == "loué" && (
+              <>
+                <Text style={styles.annonceStateInfo}>
+                  Ce véhicule a été loué
+                </Text>
+                <Text style={styles.annonceStateInfoSubTitle}>
+                  Et n'est pas visible par les autres utilisateurs
+                </Text>
+              </>
+            )}
+
+            {actualItem.annonce.annonceState !== "loué" && (
+              <StateButtonWithTitle
+                title={`Marquer votre article comme ${
+                  actualItem.annonce.transaction == "Vente" ? "Vendu" : "Loué"
+                }`}
+                marginTop={ms(0)}
+                onPress={() => console.log("test")}
+                color={colors.tertiary}
+              />
+            )}
+
+            {actualItem.annonce.annonceState !== "loué" && (
+              <StateButtonWithTitle
+                title="Relancer l'annonce"
+                marginTop={ms(25)}
+                onPress={() => console.log("test")}
+                color={colors.tertiary}
+              />
+            )}
+
+            {actualItem.annonce.annonceState == "loué" && (
+              <StateButtonWithTitle
+                title="Remettre l'annonce en location"
+                marginTop={ms(0)}
+                onPress={() => console.log("test")}
+                color={colors.tertiary}
+              />
+            )}
+
+            {actualItem.annonce.annonceState !== "loué" && (
+              <StateButtonWithTitle
+                title="Retirer l'annonce"
+                marginTop={ms(25)}
+                onPress={() => handleRemoveAnnonce()}
+                color={colors.accentRed}
+              />
+            )}
+
+            {actualItem.annonce.annonceState !== "loué" && (
+              <StateButton
+                color={colors.tertiary}
+                fontSize={ms(14)}
+                paddingVertical={ms(10)}
+                paddingHorizontal={ms(35)}
+                marginTop={ms(30)}
+                onPress={() => navigation.navigate("AnnounceDetails", { item })}
+                icon={
+                  <FontAwesomeIcon
+                    icon={faEye}
+                    size={ms(15)}
+                    color={colors.tertiary}
+                  />
+                }
+                content="Voir le rendu de votre annonce"
+                width={"full"}
+                fontFamily={"Inter-ExtraBold"}
+              />
+            )}
+
+            {!actualItem.annonce.premium &&
+              actualItem.annonce.annonceState !== "loué" && (
+                <StateButton
+                  color={colors.tertiary}
+                  fontSize={ms(14)}
+                  paddingVertical={ms(10)}
+                  paddingHorizontal={ms(35)}
+                  marginTop={ms(15)}
+                  onPress={() => console.log("test")}
+                  icon={
+                    <FontAwesomeIcon
+                      icon={faCrown}
+                      size={ms(15)}
+                      color={colors.tertiary}
+                    />
+                  }
+                  content="Mettre cette annonce en premium"
+                  width={"full"}
+                  fontFamily={"Inter-ExtraBold"}
                 />
+              )}
+
+            {actualItem.annonce.annonceState !== "loué" && (
+              <View style={styles.expirationDate}>
+                <Text style={styles.expirationDateContent}>
+                  Votre annonce s'expire dans: {expirationDate}
+                </Text>
               </View>
+            )}
+          </View>
 
-              <Text style={styles.premiumAnnonceExpirateDate}>
-                Temps restant: {premiumExpirationDate}
+          {/* Section formulaire d'édition des informations */}
+          {actualItem.annonce.annonceState !== "loué" && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Informations</Text>
+
+              <Input
+                label={"Titre de votre annonce"}
+                binding={true}
+                placeholder={"Ex: (Rolls Royce Phantom)"}
+                icon={faHeading}
+                control={control}
+                name="title"
+                marginTop={false}
+                rules={{
+                  required: "Le titre est requis",
+                  minLength: {
+                    value: 5,
+                    message: "Un titre doit avoir minimum 5 caractères",
+                  },
+                  maxLength: {
+                    value: 40,
+                    message: "Un titre doit avoir maximum 40 caractères",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Prix"}
+                binding={true}
+                placeholder={"Ex: (50000)"}
+                icon={faMoneyBill}
+                rightIcon={faEuroSign}
+                control={control}
+                name="price"
+                rules={{
+                  required: "Le prix est requis",
+                  pattern: {
+                    value: /^(?!.*  )[0-9 ]+$/,
+                    message:
+                      "Vous devez mettre uniquement des chiffres et un espace à la fois",
+                  },
+                  minLength: {
+                    value: 2,
+                    message: "Le prix doit avoir minimum 2 chiffres",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Type de véhicule"}
+                binding={true}
+                placeholder={"Ex: (Voitures)"}
+                icon={faLayerGroup}
+                items={typeVehiculeItems}
+                type={"select"}
+                defaultSelect={getValues("type")}
+                control={control}
+                name="type"
+                rules={{
+                  required: "Le type de véhicule est requis",
+                }}
+              />
+
+              <Input
+                label={"Type de transaction"}
+                binding={true}
+                placeholder={"Ex: (Location)"}
+                icon={faExchangeAlt}
+                items={transactionItems}
+                type={"select"}
+                defaultSelect={getValues("transaction")}
+                control={control}
+                name="transaction"
+                rules={{
+                  required: "Le type de transaction est requis",
+                }}
+              />
+
+              <Input
+                label={"Condition du véhicule"}
+                binding={true}
+                placeholder={"Ex: (Neuf)"}
+                icon={faTachometerAlt}
+                items={conditionItems}
+                type={"select"}
+                defaultSelect={getValues("condition")}
+                control={control}
+                name="condition"
+                rules={{
+                  required: "La condition du véhicule est requise",
+                }}
+              />
+
+              <Input
+                label={"Quantité"}
+                binding={true}
+                placeholder={"Ex: (1)"}
+                icon={faBoxes}
+                control={control}
+                name="quantity"
+                rules={{
+                  required: "La quantité est requise",
+                  pattern: {
+                    value: /^[0-9]+$/,
+                    message: "Vous devez mettre uniquement des chiffres",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Ville"}
+                binding={true}
+                placeholder={"Ex: (Corte, 20250)"}
+                icon={faCity}
+                control={control}
+                name="city"
+                rules={{
+                  required: "La ville est requise",
+                  pattern: {
+                    value: /^[a-zA-ZÀ-ÿ\s-]+,\s?\d{5}$/,
+                    message:
+                      "Veuillez respecter le format d'une ville et d'un code postal français (Ex: Corte, 20250)",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Marque"}
+                binding={true}
+                placeholder={"Ex: (Ford)"}
+                icon={faTags}
+                control={control}
+                name="mark"
+                rules={{
+                  required: "La marque est requise",
+                  minLength: {
+                    value: 2,
+                    message: "Une marque doit avoir minimum 2 caractères",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Modèle"}
+                binding={true}
+                placeholder={"Ex: (Mustang GT)"}
+                icon={faClipboardList}
+                control={control}
+                name="model"
+                rules={{
+                  required: "Le modèle est requis",
+                  minLength: {
+                    value: 2,
+                    message: "Un modèle doit avoir minimum 2 caractères",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Année"}
+                binding={true}
+                placeholder={"Ex: (2024)"}
+                icon={faCalendarAlt}
+                control={control}
+                name="year"
+                rules={{
+                  required: "L'année est requise",
+                  pattern: {
+                    value: /^(19|20)\d{2}$/,
+                    message: "Veuillez entrer une année valide",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Type de carburant"}
+                binding={true}
+                placeholder={"Ex: (Essence)"}
+                icon={faGasPump}
+                control={control}
+                name="fuelType"
+                type="select"
+                items={fuelTypeItems}
+                defaultSelect={getValues("fuelType")}
+                rules={{
+                  required: "Le type de carburant est requis",
+                }}
+              />
+
+              <Input
+                label={"Type de boîte"}
+                binding={true}
+                placeholder={"Ex: (Manuel)"}
+                icon={faGears}
+                control={control}
+                name="gearbox"
+                type="select"
+                items={typeGearBoxItems}
+                defaultSelect={getValues("gearbox")}
+                rules={{
+                  required: "Le type de boîte est requis",
+                  minLength: {
+                    value: 2,
+                    message: "Le type de boîte doit avoir minimum 2 caractères",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Climatisation"}
+                binding={true}
+                placeholder={"Ex: (Très bonne état)"}
+                icon={faWind}
+                control={control}
+                name="climatisation"
+                type="select"
+                items={climatisationItems}
+                defaultSelect={String(getValues("climatisation"))}
+                rules={{
+                  required: "La climatisation est requise",
+                  minLength: {
+                    value: 2,
+                    message: "La climatisation doit avoir minimum 2 caractères",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Kilométrage"}
+                binding={false}
+                placeholder={"Ex: (10000)"}
+                icon={faRoad}
+                control={control}
+                rightText={"KM"}
+                name="klm_counter"
+                rules={{
+                  pattern: {
+                    value: /^(?!.*  )[0-9 ]+$/,
+                    message:
+                      "Vous devez mettre uniquement des chiffres et un espace à la fois",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Numéro de téléphone à contacter"}
+                binding={false}
+                placeholder={"Ex: (0780853613)"}
+                icon={faPhone}
+                control={control}
+                name="phoneNumber"
+                rules={{
+                  pattern: {
+                    value: /^0[1-9]\d{8}$/,
+                    message:
+                      "Veuillez respecter le format d'un numéro de téléphone",
+                  },
+                }}
+              />
+
+              <Input
+                label={"Description"}
+                binding={false}
+                placeholder={"Ajoutez une description à votre annonce"}
+                control={control}
+                name="description"
+                multiline={true}
+              />
+
+              <ValidationButton
+                onSubmit={onSubmit}
+                handleSubmit={handleSubmit}
+                text={"Modifier"}
+                errors={errors}
+                messageError={
+                  "Modification non réussie, veuillez corriger les erreurs ci-dessus."
+                }
+                disabled={disableBtn}
+                loading={disableBtn}
+              />
+              {successMessage && <SuccessText>{successMessage}</SuccessText>}
+              {error && <ErrorText>{error}</ErrorText>}
+            </View>
+          )}
+
+          {/* Section de gestion des images */}
+          {actualItem.annonce.annonceState !== "loué" && (
+            <View style={[styles.section]}>
+              <Text style={styles.imageSectionTitle}>
+                Ajoutez une nouvelle images en cliquant sur le bouton ci-dessous
               </Text>
-            </>
-          )}
-
-          {item.annonce.annonceState == "loué" && (
-            <>
-              <Text style={styles.annonceStateInfo}>
-                Ce véhicule a été loué
+              <Text style={styles.imageSectionSubTitle}>
+                PS: La première image est celle qui doit donner le plus
+                d'impression
               </Text>
-              <Text style={styles.annonceStateInfoSubTitle}>
-                Et n'est pas visible par les autres utilisateurs
-              </Text>
-            </>
-          )}
 
-          {item.annonce.annonceState !== "loué" && (
-            <StateButtonWithTitle
-              title={`Marquer votre article comme ${
-                item.annonce.transaction == "Vente" ? "vendu" : "loué"
-              }`}
-              marginTop={ms(0)}
-              onPress={() => console.log("test")}
-              color={colors.tertiary}
-            />
-          )}
-
-          {item.annonce.annonceState !== "loué" && (
-            <StateButtonWithTitle
-              title="Relancer l'annonce"
-              marginTop={ms(25)}
-              onPress={() => console.log("test")}
-              color={colors.tertiary}
-            />
-          )}
-
-          {item.annonce.annonceState == "loué" && (
-            <StateButtonWithTitle
-              title="Remettre l'annonce en location"
-              marginTop={ms(0)}
-              onPress={() => console.log("test")}
-              color={colors.tertiary}
-            />
-          )}
-
-          {item.annonce.annonceState !== "loué" && (
-            <StateButtonWithTitle
-              title="Retirer l'annonce"
-              marginTop={ms(25)}
-              onPress={() => console.log("test")}
-              color={colors.accentRed}
-            />
-          )}
-
-          {item.annonce.annonceState !== "loué" && (
-            <StateButton
-              color={colors.tertiary}
-              fontSize={ms(14)}
-              paddingVertical={ms(10)}
-              paddingHorizontal={ms(35)}
-              marginTop={ms(30)}
-              onPress={() => navigation.navigate("AnnounceDetails", { item })}
-              icon={
+              <Pressable
+                style={styles.imageIconContainer}
+                onPress={() =>
+                  setModalVisible({
+                    state: true,
+                    type: ["add"],
+                  })
+                }
+              >
+                <FontAwesomeIcon icon={faCamera} size={ms(50)} />
                 <FontAwesomeIcon
-                  icon={faEye}
-                  size={ms(15)}
-                  color={colors.tertiary}
+                  icon={faPlus}
+                  size={ms(20)}
+                  style={styles.plusIcon}
                 />
-              }
-              content="Voir le rendu de votre annonce"
-              width={"full"}
-              fontFamily={"Inter-ExtraBold"}
-            />
-          )}
+              </Pressable>
 
-          {!item.annonce.premium && item.annonce.annonceState !== "loué" && (
-            <StateButton
-              color={colors.tertiary}
-              fontSize={ms(14)}
-              paddingVertical={ms(10)}
-              paddingHorizontal={ms(35)}
-              marginTop={ms(15)}
-              onPress={() => console.log("test")}
-              icon={
-                <FontAwesomeIcon
-                  icon={faCrown}
-                  size={ms(15)}
-                  color={colors.tertiary}
-                />
-              }
-              content="Mettre cette annonce en premium"
-              width={"full"}
-              fontFamily={"Inter-ExtraBold"}
-            />
-          )}
+              <Text style={styles.numberImage}>{images.length}/10</Text>
 
-          {item.annonce.annonceState !== "loué" && (
-            <View style={styles.expirationDate}>
-              <Text style={styles.expirationDateContent}>
-                Votre annonce s'expire dans: {expirationDate}
-              </Text>
+              {imageError && (
+                <Text style={styles.errorImage}>
+                  Il faut au moins une image dans l'annonce
+                </Text>
+              )}
+
+              {errorImage && <ErrorText>{errorImage}</ErrorText>}
+              {successImage && <SuccessText>{successImage}</SuccessText>}
+
+              {/* Affichage des images avec options d'édition */}
+              {images.length > 0 && (
+                <View style={styles.imagesContainer}>
+                  {images.map((image, index) => (
+                    <View key={index} style={styles.imageCard}>
+                      <Image
+                        source={
+                          image.imageUrl
+                            ? { uri: image.imageUrl }
+                            : require("../../assets/Audi.png")
+                        }
+                        style={{
+                          width: "60%",
+                          height: ms(120),
+                          borderRadius: ms(20),
+                        }}
+                        resizeMode="stretch"
+                      />
+                      <ButtonEdit
+                        onPress={() => {
+                          setModalVisible({
+                            state: true,
+                            type: ["update"],
+                          });
+                          setManipIndex(index);
+                        }}
+                        style={{
+                          position: "absolute",
+                          bottom: ms(8),
+                          left: ms(8),
+                        }}
+                      />
+                      <ButtonDelete
+                        onPress={() => {
+                          setModalVisible({
+                            state: true,
+                            type: ["remove"],
+                          });
+                          setManipIndex(index);
+                        }}
+                        style={{
+                          position: "absolute",
+                          bottom: ms(8),
+                          right: ms(8),
+                        }}
+                      />
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           )}
         </View>
-
-        {/* Section formulaire d'édition des informations */}
-        {item.annonce.annonceState !== "loué" && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Informations</Text>
-
-            <Input
-              label={"Titre de votre annonce"}
-              binding={true}
-              placeholder={"Ex: (Rolls Royce Phantom)"}
-              icon={faHeading}
-              control={control}
-              name="title"
-              marginTop={false}
-              rules={{
-                required: "Le titre est requis",
-                minLength: {
-                  value: 5,
-                  message: "Un titre doit avoir minimum 5 caractères",
-                },
-                maxLength: {
-                  value: 40,
-                  message: "Un titre doit avoir maximum 40 caractères",
-                },
-              }}
-            />
-
-            <Input
-              label={"Prix"}
-              binding={true}
-              placeholder={"Ex: (50000)"}
-              icon={faMoneyBill}
-              rightIcon={faEuroSign}
-              control={control}
-              name="price"
-              rules={{
-                required: "Le prix est requis",
-                pattern: {
-                  value: /^(?!.*  )[0-9 ]+$/,
-                  message:
-                    "Vous devez mettre uniquement des chiffres et un espace à la fois",
-                },
-                minLength: {
-                  value: 2,
-                  message: "Le prix doit avoir minimum 2 chiffres",
-                },
-              }}
-            />
-
-            <Input
-              label={"Type de véhicule"}
-              binding={true}
-              placeholder={"Ex: (Voitures)"}
-              icon={faLayerGroup}
-              items={typeVehiculeItems}
-              type={"select"}
-              defaultSelect={getValues("type")}
-              control={control}
-              name="type"
-              rules={{
-                required: "Le type de véhicule est requis",
-              }}
-            />
-
-            <Input
-              label={"Type de transaction"}
-              binding={true}
-              placeholder={"Ex: (Location)"}
-              icon={faExchangeAlt}
-              items={transactionItems}
-              type={"select"}
-              defaultSelect={getValues("transaction")}
-              control={control}
-              name="transaction"
-              rules={{
-                required: "Le type de transaction est requis",
-              }}
-            />
-
-            <Input
-              label={"Condition du véhicule"}
-              binding={true}
-              placeholder={"Ex: (Neuf)"}
-              icon={faTachometerAlt}
-              items={conditionItems}
-              type={"select"}
-              defaultSelect={getValues("condition")}
-              control={control}
-              name="condition"
-              rules={{
-                required: "La condition du véhicule est requise",
-              }}
-            />
-
-            <Input
-              label={"Quantité"}
-              binding={true}
-              placeholder={"Ex: (1)"}
-              icon={faBoxes}
-              control={control}
-              name="quantity"
-              rules={{
-                required: "La quantité est requise",
-                pattern: {
-                  value: /^[0-9]+$/,
-                  message: "Vous devez mettre uniquement des chiffres",
-                },
-              }}
-            />
-
-            <Input
-              label={"Ville"}
-              binding={true}
-              placeholder={"Ex: (Corte, 20250)"}
-              icon={faCity}
-              control={control}
-              name="city"
-              rules={{
-                required: "La ville est requise",
-                pattern: {
-                  value: /^[a-zA-ZÀ-ÿ\s-]+,\s?\d{5}$/,
-                  message:
-                    "Veuillez respecter le format d'une ville et d'un code postal français (Ex: Corte, 20250)",
-                },
-              }}
-            />
-
-            <Input
-              label={"Marque"}
-              binding={true}
-              placeholder={"Ex: (Ford)"}
-              icon={faTags}
-              control={control}
-              name="mark"
-              rules={{
-                required: "La marque est requise",
-                minLength: {
-                  value: 2,
-                  message: "Une marque doit avoir minimum 2 caractères",
-                },
-              }}
-            />
-
-            <Input
-              label={"Modèle"}
-              binding={true}
-              placeholder={"Ex: (Mustang GT)"}
-              icon={faClipboardList}
-              control={control}
-              name="model"
-              rules={{
-                required: "Le modèle est requis",
-                minLength: {
-                  value: 2,
-                  message: "Un modèle doit avoir minimum 2 caractères",
-                },
-              }}
-            />
-
-            <Input
-              label={"Année"}
-              binding={true}
-              placeholder={"Ex: (2024)"}
-              icon={faCalendarAlt}
-              control={control}
-              name="year"
-              rules={{
-                required: "L'année est requise",
-                pattern: {
-                  value: /^(19|20)\d{2}$/,
-                  message: "Veuillez entrer une année valide",
-                },
-              }}
-            />
-
-            <Input
-              label={"Type de carburant"}
-              binding={true}
-              placeholder={"Ex: (Essence)"}
-              icon={faGasPump}
-              control={control}
-              name="fuelType"
-              type="select"
-              items={fuelTypeItems}
-              defaultSelect={getValues("fuelType")}
-              rules={{
-                required: "Le type de carburant est requis",
-              }}
-            />
-
-            <Input
-              label={"Type de boîte"}
-              binding={true}
-              placeholder={"Ex: (Manuel)"}
-              icon={faGears}
-              control={control}
-              name="gearbox"
-              type="select"
-              items={typeGearBoxItems}
-              defaultSelect={getValues("gearbox")}
-              rules={{
-                required: "Le type de boîte est requis",
-                minLength: {
-                  value: 2,
-                  message: "Le type de boîte doit avoir minimum 2 caractères",
-                },
-              }}
-            />
-
-            <Input
-              label={"Climatisation"}
-              binding={true}
-              placeholder={"Ex: (Très bonne état)"}
-              icon={faWind}
-              control={control}
-              name="climatisation"
-              type="select"
-              items={climatisationItems}
-              defaultSelect={String(getValues("climatisation"))}
-              rules={{
-                required: "La climatisation est requise",
-                minLength: {
-                  value: 2,
-                  message: "La climatisation doit avoir minimum 2 caractères",
-                },
-              }}
-            />
-
-            <Input
-              label={"Kilométrage"}
-              binding={false}
-              placeholder={"Ex: (10000)"}
-              icon={faRoad}
-              control={control}
-              rightText={"KM"}
-              name="klm_counter"
-              rules={{
-                pattern: {
-                  value: /^(?!.*  )[0-9 ]+$/,
-                  message: "Vous devez mettre uniquement des chiffres et un espace à la fois",
-                },
-              }}
-            />
-
-            <Input
-              label={"Numéro de téléphone à contacter"}
-              binding={false}
-              placeholder={"Ex: (0780853613)"}
-              icon={faPhone}
-              control={control}
-              name="phoneNumber"
-              rules={{
-                pattern: {
-                  value: /^0[1-9]\d{8}$/,
-                  message:
-                    "Veuillez respecter le format d'un numéro de téléphone",
-                },
-              }}
-            />
-
-            <Input
-              label={"Description"}
-              binding={false}
-              placeholder={"Ajoutez une description à votre annonce"}
-              control={control}
-              name="description"
-              multiline={true}
-            />
-
-            <ValidationButton
-              onSubmit={onSubmit}
-              handleSubmit={handleSubmit}
-              text={"Modifier"}
-              errors={errors}
-              messageError={
-                "Modification non réussie, veuillez corriger les erreurs ci-dessus."
-              }
-            />
-            {successMessage && <SuccessText>{successMessage}</SuccessText>}
-            {error && <ErrorText>{error}</ErrorText>}
-          </View>
-        )}
-
-        {/* Section de gestion des images */}
-        {item.annonce.annonceState !== "loué" && (
-          <View style={[styles.section]}>
-            <Text style={styles.imageSectionTitle}>
-              Ajoutez une nouvelle images en cliquant sur le bouton ci-dessous
-            </Text>
-            <Text style={styles.imageSectionSubTitle}>
-              PS: La première image est celle qui doit donner le plus
-              d'impression
-            </Text>
-
-            <Pressable
-              style={styles.imageIconContainer}
-              onPress={() =>
-                setModalVisible({
-                  state: true,
-                  type: ["add"],
-                })
-              }
-            >
-              <FontAwesomeIcon icon={faCamera} size={ms(50)} />
-              <FontAwesomeIcon
-                icon={faPlus}
-                size={ms(20)}
-                style={styles.plusIcon}
-              />
-            </Pressable>
-
-            <Text style={styles.numberImage}>{images.length}/10</Text>
-
-            {imageError && (
-              <Text style={styles.errorImage}>
-                Il faut au moins une image dans l'annonce
-              </Text>
-            )}
-
-            {errorImage && <ErrorText>{errorImage}</ErrorText>}
-            {successImage && <SuccessText>{successImage}</SuccessText>}
-
-            {/* Affichage des images avec options d'édition */}
-            {images.length > 0 && (
-              <View style={styles.imagesContainer}>
-                {images.map((image, index) => (
-                  <View key={index} style={styles.imageCard}>
-                    <Image
-                      source={
-                        image.imageUrl
-                          ? { uri: image.imageUrl }
-                          : require("../../assets/Audi.png")
-                      }
-                      style={{
-                        width: "60%",
-                        height: ms(120),
-                        borderRadius: ms(20),
-                      }}
-                      resizeMode="stretch"
-                    />
-                    <ButtonEdit
-                      onPress={() => {
-                        setModalVisible({
-                          state: true,
-                          type: ["update"],
-                        });
-                        setManipIndex(index);
-                      }}
-                      style={{
-                        position: "absolute",
-                        bottom: ms(8),
-                        left: ms(8),
-                      }}
-                    />
-                    <ButtonDelete
-                      onPress={() => {
-                        setModalVisible({
-                          state: true,
-                          type: ["remove"],
-                        });
-                        setManipIndex(index);
-                      }}
-                      style={{
-                        position: "absolute",
-                        bottom: ms(8),
-                        right: ms(8),
-                      }}
-                    />
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 };
 
@@ -1280,5 +1341,8 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Medium",
     marginTop: ms(20),
     marginBottom: ms(10),
+  },
+  notVisible: {
+    opacity: 0,
   },
 });

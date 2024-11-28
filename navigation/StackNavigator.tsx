@@ -21,7 +21,6 @@ import {
   Login,
   Messages,
   MyAnnounces,
-  NewPost,
   PasswordChange,
   PasswordRecovery,
   Post,
@@ -30,10 +29,12 @@ import {
   ProfilInformations,
   ProfilPassword,
   Register,
+  RelaunchPost,
   Search,
 } from "../screens";
 import { TabBar } from "../components";
 import { useSelector } from "react-redux";
+import PostPage from "../screens/PostPage/PostPage";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -42,7 +43,12 @@ const BottomBar: React.FC = () => {
   const user = useSelector((state: any) => state.auth.userLogin);
 
   return (
-    <Tab.Navigator tabBar={(props) => <TabBar {...props} />}>
+    <Tab.Navigator
+      tabBar={(props) => <TabBar {...props} />}
+      screenOptions={{
+        tabBarHideOnKeyboard: true,
+      }}
+    >
       <Tab.Screen
         name="HomeStack"
         component={HomeStack}
@@ -161,9 +167,15 @@ const PostStack: React.FC = () => {
       />
 
       <Stack.Screen
-        name="NewPost"
-        component={NewPost}
-        options={{ title: "NewPost", headerShown: false }}
+        name="PostPage"
+        component={PostPage}
+        options={{ title: "PostPage", headerShown: false }}
+      />
+
+      <Stack.Screen
+        name="RelaunchPost"
+        component={RelaunchPost}
+        options={{ title: "RelaunchPost", headerShown: false }}
       />
     </Stack.Navigator>
   );

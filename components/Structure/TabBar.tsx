@@ -1,3 +1,5 @@
+/** @format */
+
 // Importation des composants et hooks nécessaires
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import React from "react";
@@ -17,30 +19,25 @@ interface RootState {
  * Composant TabBar personnalisé pour la navigation inférieure
  * Gère l'affichage et les interactions avec la barre de navigation
  */
-const TabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
+const TabBar: React.FC<BottomTabBarProps> = ({
+  state,
+  descriptors,
+  navigation,
+}) => {
   // Récupération de l'état d'affichage depuis le store Redux
   const display = useSelector((state: RootState) => state.global.display);
 
   return (
     <View
       style={[
-        {
-          flexDirection: "row",
-          borderTopWidth: ms(2),
-          paddingVertical: ms(10),
-          borderColor: colors.textOpacityPP,
-          backgroundColor: colors.primary,
-          height: ms(50),
-          alignItems: "center",
-        },
-        // Masque la TabBar si display est false
-        !display && { display: 'none' }
+        styles.container,
+        !display && { display: "none" },
       ]}
     >
       {/* Mapping des routes pour créer les onglets */}
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
-        
+
         // Détermination du label à afficher pour l'onglet
         const label =
           options.tabBarLabel !== undefined
@@ -113,6 +110,15 @@ const TabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation })
 
 // Styles pour le composant TabBar
 const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    borderTopWidth: ms(2),
+    paddingVertical: ms(10),
+    borderColor: colors.textOpacityPP,
+    backgroundColor: colors.primary,
+    height: ms(50),
+    alignItems: "center",
+  },
   tabBar: {
     flex: 1,
     alignItems: "center",

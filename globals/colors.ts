@@ -5,10 +5,12 @@ export const colors = {
     accentTertiary: "#296DB1",
     accentGreen: "#388E3C",
     accentRed: "#FF0000",  
-    accentGray: "#dfdede",
+    accentGray: "#b0b0b0",
     textColor: "#333333",
     textOpacity: "#7C7C7C",
     textOpacityP: "#ABABAB",
     textOpacityPP: "#b7b7b7",
     inputColor: "#efefef",
+    inputPlaceHolderColor: "rgba(0, 0, 0, 0.4)",
+    æccentTertiaryMessage: "#CED4E0",
 }

@@ -4,7 +4,13 @@ import { StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import { colors } from "../../globals/colors";
 import { ms } from "react-native-size-matters";
-import { PageHeader, Input, ValidationButton, ErrorText, SuccessText } from "../../components";
+import {
+  PageHeader,
+  Input,
+  ValidationButton,
+  ErrorText,
+  SuccessText,
+} from "../../components";
 import { ScrollView } from "react-native-gesture-handler";
 import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
@@ -36,7 +42,8 @@ interface ProfilPasswordData {
 const ProfilPassword: React.FC<ProfilPasswordProps> = ({ navigation }) => {
   // Récupération des informations de l'utilisateur depuis le store Redux
   const user = useSelector((state: any) => state.auth.userLogin);
-  
+  const [btnDisabled, setBtnDisabled] = useState(false);
+
   // Configuration du formulaire avec react-hook-form
   const {
     control,
@@ -45,7 +52,7 @@ const ProfilPassword: React.FC<ProfilPasswordProps> = ({ navigation }) => {
     reset,
     formState: { errors },
   } = useForm<ProfilPasswordData>();
-  
+
   // Surveillance de la valeur du champ password pour la validation
   const password = watch("password");
   const [success, setSuccess] = useState("");
@@ -57,8 +64,11 @@ const ProfilPassword: React.FC<ProfilPasswordProps> = ({ navigation }) => {
    * Affiche un message de succès ou d'erreur
    */
   const onSubmit = async (data: ProfilPasswordData) => {
+    setBtnDisabled(true);
     try {
-      const response = await api.put("/users/" + user.userId, { password: data.password });
+      const response = await api.put("/users/" + user.userId, {
+        password: data.password,
+      });
       setSuccess("Les informations ont bien été modifiés");
       // Efface le message de succès après 4 secondes
       setTimeout(() => {
@@ -71,6 +81,8 @@ const ProfilPassword: React.FC<ProfilPasswordProps> = ({ navigation }) => {
         setError("");
       }, 4000);
     }
+
+    setBtnDisabled(false);
     reset();
   };
 
@@ -90,10 +102,7 @@ const ProfilPassword: React.FC<ProfilPasswordProps> = ({ navigation }) => {
       contentContainerStyle={{ flexGrow: 1 }}
       stickyHeaderIndices={[0]}
     >
-      <PageHeader
-        onPress={() => navigation.goBack()}
-        color="gray"
-      />
+      <PageHeader onPress={() => navigation.goBack()} />
       <View style={styles.pageStyle}>
         <Text style={styles.pageTitle}>Mot de passe</Text>
         <View style={styles.forms}>
@@ -142,6 +151,8 @@ const ProfilPassword: React.FC<ProfilPasswordProps> = ({ navigation }) => {
             onSubmit={onSubmit}
             errors={errors}
             messageError={"Veuillez corriger les erreurs ci-dessus"}
+            disabled={btnDisabled}
+            loading={btnDisabled}
           />
           {error && <ErrorText>{error}</ErrorText>}
           {success && <SuccessText>{success}</SuccessText>}
@@ -175,5 +186,5 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-ExtraBold",
     marginBottom: ms(15),
     alignSelf: "center",
-  }
+  },
 });

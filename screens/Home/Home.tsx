@@ -70,14 +70,10 @@ const Home: React.FC<{ navigation: any }> = ({ navigation }) => {
           const response = await apiUserCheck.get(
             `/users/by-token/${accessToken}`
           );
-          const user = await response.data.data;
+          const user = response.data.data;
           dispatch(setUserLogin(getBasicUserInfo(user)));
         }
       } catch (error) {
-        console.error(
-          "Erreur lors de la vérification de l'utilisateur:",
-          error
-        );
       }
     };
 
@@ -93,7 +89,7 @@ const Home: React.FC<{ navigation: any }> = ({ navigation }) => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Container principal avec padding horizontal */}
         <View style={{ paddingHorizontal: ms(20) }}>
-          <Header />
+          <Header navigation={navigation} />
           <ImgPresSlider />
           <AllMarques />
 
@@ -146,7 +142,10 @@ const Home: React.FC<{ navigation: any }> = ({ navigation }) => {
                 Vendez ou louez dès maintenant
               </Text>
 
-              <Pressable style={styles.bottomPostButton} onPress={() => navigation.navigate("Post")}>
+              <Pressable
+                style={styles.bottomPostButton}
+                onPress={() => navigation.navigate("PostStack")}
+              >
                 <Text style={styles.bottomPostButtonText}>
                   Déposer une annonce
                 </Text>

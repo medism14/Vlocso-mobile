@@ -9,6 +9,8 @@ import {
   widthPercentageToDP as wp,
 } from "react-native-responsive-screen";
 import globalStyles from "../../../globals/globalStyles";
+import { useDispatch } from "react-redux";
+import { incrementImagesLoad } from "../../../redux/features/imagesLoads";
 
 /**
  * Interface définissant les props du composant DisplayImagesEdit
@@ -18,6 +20,7 @@ import globalStyles from "../../../globals/globalStyles";
 interface DisplayImagesEditProps {
   images: { imageUrl: string }[]; // Correction du type pour inclure imageUrl
   allSpace: number;
+  setNumberImagesLoaded?: any;
 }
 
 /**
@@ -27,6 +30,7 @@ interface DisplayImagesEditProps {
 const DisplayImagesEdit: React.FC<DisplayImagesEditProps> = ({
   images,
   allSpace,
+  setNumberImagesLoaded,
 }) => {
   // Référence vers le FlatList pour contrôler le défilement
   const flatListRef = useRef<FlatList<{ imageUrl: string }> | null>(null); // Correction du type
@@ -37,6 +41,8 @@ const DisplayImagesEdit: React.FC<DisplayImagesEditProps> = ({
   // État pour suivre l'index de l'image actuellement affichée
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
+  const dispatch = useDispatch();
+
   /**
    * Configuration de la visibilité des éléments du FlatList
    * Un élément est considéré comme visible s'il est affiché à plus de 50%
@@ -44,6 +50,10 @@ const DisplayImagesEdit: React.FC<DisplayImagesEditProps> = ({
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
   }).current;
+
+  const imagesLoad = () => {
+    dispatch(incrementImagesLoad());
+  }
 
   /**
    * Callback appelé lorsqu'un nouvel élément devient visible
@@ -68,17 +78,17 @@ const DisplayImagesEdit: React.FC<DisplayImagesEditProps> = ({
               source={{ uri: item.imageUrl }}
               style={styles.image}
               resizeMode={"cover"}
+              onLoad={imagesLoad}
             />
           </View>
         )}
         showsHorizontalScrollIndicator={false}
         horizontal
         pagingEnabled
-        keyExtractor={(_, index) => index.toString()}
+        keyExtractor={(item, index) => item.imageUrl}
         viewabilityConfig={viewabilityConfig}
         onViewableItemsChanged={onViewableItemsChanged}
       />
-
       {/* Indicateurs de pagination */}
       <View style={[globalStyles.pagination, { marginTop: ms(10) }]}>
         {images.map((_, index) => (

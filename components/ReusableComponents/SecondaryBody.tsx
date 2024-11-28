@@ -40,12 +40,16 @@ const SecondaryBody: React.FC<SecondaryBodyProps> = ({
   };
 
   return (
-    <View style={[styles.secondaryBody, step ? styles.secondaryBodyRadiusIfStep : { borderRadius: ms(8) }]}>
+    <View
+      style={[
+        styles.secondaryBody,
+        step ? styles.secondaryBodyRadiusIfStep : { borderRadius: ms(8) },
+      ]}
+    >
       {/* Affiche la barre de progression si step et totalStep sont définis */}
       {step && totalStep && (
         <View style={[styles.step, { width: getWidthElement() }]} />
       )}
-
       {children}
     </View>
   );
@@ -62,6 +66,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.secondary,
     paddingVertical: ms(20),
     paddingHorizontal: ms(15),
+    minHeight: ms(100),
     width: "100%",
   },
   secondaryBodyRadiusIfStep: {

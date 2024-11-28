@@ -26,7 +26,6 @@ import { Dropdown } from "react-native-element-dropdown";
 
 /**
  * Interface définissant les propriétés du composant Input.
- * Permet de typer fortement les props et documenter leur utilisation.
  */
 interface InputProps {
   label: string;
@@ -50,13 +49,7 @@ interface InputProps {
 }
 
 /**
- * Composant Input réutilisable supportant différents types d'entrées:
- * - Texte simple ou multiline
- * - Champs sécurisés (mot de passe)
- * - Sélecteur de date
- * - Menu déroulant (dropdown)
- * 
- * Intègre react-hook-form pour la gestion des formulaires.
+ * Composant Input réutilisable
  */
 const Input: React.FC<InputProps> = ({
   label,
@@ -78,7 +71,6 @@ const Input: React.FC<InputProps> = ({
   name,
   rules = {},
 }) => {
-  // États locaux pour gérer les différents comportements du composant
   const [displaySecure, setDisplaySecure] = useState(secure);
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
@@ -87,19 +79,11 @@ const Input: React.FC<InputProps> = ({
   const { height } = Dimensions.get("window");
   const maxHeight = height - ms(50);
 
-  /**
-   * Gère l'affichage du sélecteur de date
-   * Ferme le clavier si ouvert avant d'afficher le picker
-   */
   const toggleDatePicker = () => {
     Keyboard.dismiss();
     setShowPicker(!showPicker);
   };
 
-  /**
-   * Gère la sélection d'une date dans le DatePicker
-   * Met à jour la valeur du champ avec la date formatée
-   */
   const onChangeDatePicker = (event: any, selectedDate: Date | undefined) => {
     if (event.type === "set" && selectedDate) {
       setDate(selectedDate);
@@ -109,7 +93,6 @@ const Input: React.FC<InputProps> = ({
     setShowPicker(false);
   };
 
-  // Initialise les valeurs par défaut pour la date et le select
   useEffect(() => {
     if (defaultDate && date == new Date()) {
       setDate(new Date(defaultDate));
@@ -122,7 +105,10 @@ const Input: React.FC<InputProps> = ({
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={[
+        { width: "100%" },
+        multiline ? { minHeight: ms(220) } : { minHeight: ms(40) },
+      ]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS == "ios" ? ms(100) : 0}
     >
@@ -130,7 +116,7 @@ const Input: React.FC<InputProps> = ({
         <Text style={styles.label}>
           {label}:{binding && <>*</>}
         </Text>
-        {/* Utilisation de react-hook-form Controller pour gérer l'état et la validation */}
+        
         <Controller
           control={control}
           name={name}
@@ -138,7 +124,6 @@ const Input: React.FC<InputProps> = ({
           render={({ field: { onChange, value }, fieldState: { error } }) => (
             <>
               <View style={{ position: "relative" }}>
-                {/* Rendu conditionnel selon le type d'input */}
                 {type === "text" && (
                   <TextInput
                     style={[
@@ -153,10 +138,10 @@ const Input: React.FC<InputProps> = ({
                     multiline={multiline}
                     numberOfLines={multiline ? 1 : undefined}
                     textAlignVertical="top"
+                    placeholderTextColor={colors.accentGray}
                   />
                 )}
 
-                {/* Input de type date avec gestion spécifique selon la plateforme */}
                 {type === "date" &&
                   ((Platform.OS == "ios" && !showPicker) ||
                     Platform.OS == "android") && (
@@ -180,20 +165,25 @@ const Input: React.FC<InputProps> = ({
                     </Pressable>
                   )}
 
-                {/* Menu déroulant avec support de recherche */}
                 {type === "select" && (
                   <Dropdown
-                    style={[styles.input, error && styles.inputError]}
+                    ref={dropdownRef}
+                    style={[
+                      styles.input, 
+                      error && styles.inputError,
+                      { marginBottom: 0 }
+                    ]}
+                    containerStyle={{
+                      marginTop: 0,
+                      borderRadius: ms(7),
+                      overflow: 'hidden'
+                    }}
                     data={items}
                     labelField="label"
                     valueField="value"
                     placeholder={placeholder}
                     placeholderStyle={{
-                      color: value
-                        ? "#333333"
-                        : Platform.OS === "android"
-                        ? "gray"
-                        : "#bfbebe",
+                      color: colors.accentGray,
                       fontSize: ms(13),
                     }}
                     itemTextStyle={{
@@ -218,7 +208,6 @@ const Input: React.FC<InputProps> = ({
                   />
                 )}
 
-                {/* DatePicker natif */}
                 {showPicker && (
                   <DatePicker
                     mode="date"
@@ -228,7 +217,6 @@ const Input: React.FC<InputProps> = ({
                   />
                 )}
 
-                {/* Icône gauche du champ */}
                 {((Platform.OS == "ios" && !showPicker) ||
                   Platform.OS == "android") &&
                   !multiline && (
@@ -247,7 +235,6 @@ const Input: React.FC<InputProps> = ({
                     </View>
                   )}
 
-                {/* Bouton toggle visibilité mot de passe */}
                 {secure && (
                   <Pressable
                     style={styles.viewSecureContainer}
@@ -256,27 +243,21 @@ const Input: React.FC<InputProps> = ({
                     <FontAwesomeIcon
                       icon={displaySecure ? faEyeSlash : faEye}
                       size={ms(18)}
-                      style={{
-                        color: "#333333",
-                      }}
+                      style={{ color: "#333333" }}
                     />
                   </Pressable>
                 )}
 
-                {/* Icône droite personnalisée */}
                 {rightIcon && (
                   <View style={styles.viewSecureContainer}>
                     <FontAwesomeIcon
                       icon={rightIcon}
                       size={ms(17)}
-                      style={{
-                        color: colors.textColor,
-                      }}
+                      style={{ color: colors.textColor }}
                     />
                   </View>
                 )}
 
-                {/* Texte droit personnalisé */}
                 {rightText && (
                   <View style={[styles.viewSecureContainer, { width: ms(30) }]}>
                     <Text
@@ -291,7 +272,6 @@ const Input: React.FC<InputProps> = ({
                   </View>
                 )}
 
-                {/* Icône de défilement pour le sélecteur de date */}
                 {type == "date" &&
                   ((Platform.OS == "ios" && !showPicker) ||
                     Platform.OS == "android") && (
@@ -302,9 +282,7 @@ const Input: React.FC<InputProps> = ({
                       <FontAwesomeIcon
                         icon={faChevronDown}
                         size={ms(18)}
-                        style={{
-                          color: "#333333",
-                        }}
+                        style={{ color: "#333333" }}
                       />
                     </Pressable>
                   )}
@@ -320,10 +298,6 @@ const Input: React.FC<InputProps> = ({
 
 export default Input;
 
-/**
- * Styles du composant
- * Utilise react-native-size-matters pour la mise à l'échelle cohérente sur différents appareils
- */
 const styles = StyleSheet.create({
   label: {
     fontSize: ms(13.5),

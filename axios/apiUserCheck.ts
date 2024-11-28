@@ -10,7 +10,7 @@ import { setUserLogin } from "../redux/features/authSlice";
  * Retourne l'URL définie dans les variables d'environnement ou une URL par défaut.
  */
 const getApiUrl = () => {
-  return process.env.API_URL || "http://localhost:8080"; // URL par défaut si aucune variable d'environnement n'est définie
+  return process.env.API_URL;
 };
 
 /**
@@ -20,37 +20,30 @@ const getApiUrl = () => {
  */
 const deconnectUser = async () => {
   try {
-    // Récupération de l'utilisateur actuellement connecté depuis le store Redux
-    const user = store.getState().auth.userLogin;
-
     // Récupération du refresh token depuis le stockage asynchrone
     const refreshToken = await AsyncStorage.getItem("@refreshToken");
 
-    // Si un refresh token est trouvé, procéder à la déconnexion
+    // Vérification de l'existence du refresh token pour procéder à la déconnexion côté serveur
     if (refreshToken) {
-      // Création d'une instance Axios sans intercepteurs pour effectuer la requête de déconnexion
+      // Création d'une instance Axios pour la requête de déconnexion
       const axiosInstance = axios.create({
-        baseURL: getApiUrl(), // URL de base de l'API
-        timeout: 10000, // Délai d'attente de 10 secondes
+        baseURL: getApiUrl(),
+        timeout: 10000,
         headers: {
-          "Content-Type": "application/json", // Type de contenu de la requête
+          "Content-Type": "application/json",
         },
       });
 
       // Envoi de la requête de déconnexion avec le refresh token
       await axiosInstance.post("/auth/logout", { refreshToken });
     }
-
-    // Suppression des tokens d'accès et de rafraîchissement du stockage asynchrone
-    await AsyncStorage.multiRemove(["@accessToken", "@refreshToken"]);
-
-    // Si un utilisateur est connecté, mettre à jour l'état de l'utilisateur dans Redux
-    if (user) {
-      store.dispatch(setUserLogin(null)); // Déconnexion de l'utilisateur
-    }
   } catch (error) {
-    // Gestion des erreurs lors de la déconnexion
-    console.error("Erreur lors de la déconnexion:", error);
+    // Gestion des erreurs lors de la récupération du refresh token
+  } finally {
+    // Suppression des tokens d'accès et de rafraîchissement du stockage
+    await AsyncStorage.multiRemove(["@accessToken", "@refreshToken"]);
+    // Mise à jour de l'état de l'utilisateur dans le store Redux
+    store.dispatch(setUserLogin(null));
   }
 };
 
@@ -62,7 +55,7 @@ const deconnectUser = async () => {
  */
 const apiUserCheck = axios.create({
   baseURL: getApiUrl(),
-  timeout: 10000,
+  timeout: 20000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -81,6 +74,7 @@ apiUserCheck.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error("Erreur dans l'intercepteur de requête:", error);
     return Promise.reject(error);
   }
 );

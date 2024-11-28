@@ -56,7 +56,8 @@ const ProfilInformations: React.FC<ProfilInformationsProps> = ({
   const user = useSelector((state: any) => state.auth.userLogin);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-  
+  const [btnDisabled, setBtnDisabled] = useState(false);
+
   // Initialisation du formulaire avec react-hook-form
   const {
     control,
@@ -72,11 +73,12 @@ const ProfilInformations: React.FC<ProfilInformationsProps> = ({
    * Envoie les données au serveur et met à jour le store Redux
    */
   const onSubmit = async (data: ProfilInformationsData) => {
+    setBtnDisabled(true);
     try {
       const response = await api.put("/users/" + user.userId, data);
       const { data: modifiedUser, message } = response.data;
       dispatch(setUserLogin(getBasicUserInfo(modifiedUser)));
-      
+
       // Affiche un message de succès temporaire
       setSuccess(message);
       setTimeout(() => {
@@ -89,6 +91,7 @@ const ProfilInformations: React.FC<ProfilInformationsProps> = ({
         setError("");
       }, 4000);
     }
+    setBtnDisabled(false);
   };
 
   /**
@@ -112,10 +115,7 @@ const ProfilInformations: React.FC<ProfilInformationsProps> = ({
       contentContainerStyle={{ flexGrow: 1 }}
       stickyHeaderIndices={[0]}
     >
-      <PageHeader
-        onPress={() => navigation.goBack()}
-        color="gray"
-      />
+      <PageHeader onPress={() => navigation.goBack()} />
       <View style={styles.pageStyle}>
         <Text style={styles.pageTitle}>Informations Personnel</Text>
         <View style={styles.forms}>
@@ -230,6 +230,8 @@ const ProfilInformations: React.FC<ProfilInformationsProps> = ({
             onSubmit={onSubmit}
             errors={errors}
             messageError={"Veuillez corriger les erreurs ci-dessus"}
+            disabled={btnDisabled}
+            loading={btnDisabled}
           />
           {error && <ErrorText>{error}</ErrorText>}
           {success && <SuccessText>{success}</SuccessText>}
@@ -262,5 +264,5 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-ExtraBold",
     marginBottom: ms(15),
     alignSelf: "center",
-  }
+  },
 });

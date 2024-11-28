@@ -39,19 +39,21 @@ const Post: React.FC<PostProps> = ({ navigation }) => {
             {/* Carte pour créer une nouvelle annonce */}
             <PostCard
               title="Créer une nouvelle annonce"
-              onPress={() => navigation.navigate("NewPost")}
+              onPress={() => navigation.navigate("PostPage")}
               icon={<FontAwesomeIcon icon={faPlus} size={ms(15)} />}
             />
             {/* Carte pour relancer une annonce existante */}
             <PostCard
               title="Relancer une annonce"
-              onPress={() => console.log("Relancer annonce")}
+              onPress={() => navigation.navigate("RelaunchPost")}
               icon={<FontAwesomeIcon icon={faRepeat} size={ms(15)} />}
             />
           </View>
         </View>
       ) : (
-        <ConnexionRequired text={"Vous devez être connecté pour publier une annonce"} />
+        <ConnexionRequired
+          text={"Vous devez être connecté pour publier une annonce"}
+        />
       )}
     </View>
   );

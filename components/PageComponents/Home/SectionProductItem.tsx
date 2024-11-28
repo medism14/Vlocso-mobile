@@ -18,28 +18,14 @@ import { ms } from "react-native-size-matters";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faCrown, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { colors } from "../../../globals/colors";
-import type { ImageSourcePropType } from "react-native";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-
-/**
- * Interface définissant la structure d'un produit
- */
-interface ItemProps {
-  id: number;
-  title: string;
-  images: ImageSourcePropType[];
-  transaction: string;
-  condition: string;
-  price: string;
-  city: string;
-  premium: boolean;
-}
+import { annonceWithUserInterface } from "../../../types/annonce";
 
 /**
  * Props du composant principal
  */
 interface SectionProductItemProps {
-  items: ItemProps[];
+  items: annonceWithUserInterface[];
   widthParent: number;
 }
 
@@ -52,49 +38,61 @@ const SectionProductItem: React.FC<SectionProductItemProps> = ({
 }) => {
   const navigation = useNavigation<NavigationProp<any>>();
 
+  const handlePress = (item: any) => {
+    console.log(item);
+  };
+
   /**
    * Rendu d'un produit individuel
    * Affiche l'image, le titre, la catégorie, l'état, le prix et la localisation
    */
-  const renderProduct = (item: ItemProps) => (
-    <Pressable
-      style={styles.product}
-      key={item.id}
-      onPress={() => navigation.navigate('AnnounceDetails', { item })}
-    >
-      <View>
-        <Image
-          source={item.images[0]}
-          style={styles.image}
-          accessibilityLabel={item.title}
-        />
-        {/* Badge premium affiché uniquement pour les annonces premium */}
-        {item.premium && (
-          <View style={styles.premium}>
-            <FontAwesomeIcon icon={faCrown} size={ms(16)} color="white" />
+  const renderProduct = (item: annonceWithUserInterface) => {
+    return (
+      <Pressable
+        style={styles.product}
+        key={item.annonce.annonceId}
+        onPress={() =>
+          navigation.navigate("AnnounceDetails", {
+            item: JSON.parse(JSON.stringify(item)),
+          })
+        }
+      >
+        <View>
+          <Image
+            source={{ uri: item.annonce.images[0]?.imageUrl }}
+            style={styles.image}
+            accessibilityLabel={item.annonce.title}
+          />
+          {/* Badge premium affiché uniquement pour les annonces premium */}
+          {item.annonce.premium && (
+            <View style={styles.premium}>
+              <FontAwesomeIcon icon={faCrown} size={ms(16)} color="white" />
+            </View>
+          )}
+          <Text style={styles.title} numberOfLines={1}>
+            {item.annonce.title}
+          </Text>
+          <Text style={styles.category} numberOfLines={1}>
+            {item.annonce.transaction}
+          </Text>
+        </View>
+
+        {/* Affichage conditionnel de l'état du produit */}
+        {item.annonce.vehicle?.condition && (
+          <View style={styles.conditionCard}>
+            <Text style={styles.conditionText}>
+              {item.annonce.vehicle.condition}
+            </Text>
           </View>
         )}
-        <Text style={styles.title} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.category} numberOfLines={1}>
-          {item.transaction}
-        </Text>
-      </View>
 
-      {/* Affichage conditionnel de l'état du produit */}
-      {item.condition && (
-        <View style={styles.conditionCard}>
-          <Text style={styles.conditionText}>{item.condition}</Text>
+        <View>
+          <Text style={styles.price}>{item.annonce.price}€</Text>
+          <Text style={styles.location}>{item.annonce.city}</Text>
         </View>
-      )}
-
-      <View>
-        <Text style={styles.price}>{item.price}€</Text>
-        <Text style={styles.location}>{item.city}</Text>
-      </View>
-    </Pressable>
-  );
+      </Pressable>
+    );
+  };
 
   /**
    * Rendu d'une colonne de produits

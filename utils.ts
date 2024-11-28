@@ -1,8 +1,10 @@
 /** @format */
 
+import { annonceWithUserInterface } from "./types/annonce";
+
 /**
  * Extrait les informations de base d'un utilisateur à partir d'un objet utilisateur complet.
- * Cette fonction est utilisée pour créer un objet allégé contenant uniquement 
+ * Cette fonction est utilisée pour créer un objet allégé contenant uniquement
  * les données essentielles de l'utilisateur, notamment pour la gestion de l'authentification
  * et l'affichage des informations de profil.
  *
@@ -11,12 +13,12 @@
  */
 export const getBasicUserInfo = (user: any) => {
   return {
-    userId: user.userId,         // Identifiant unique de l'utilisateur
-    email: user.email,          // Adresse email principale
-    firstName: user.firstName,   // Prénom
-    lastName: user.lastName,     // Nom de famille
-    birthDate: user.birthDate,   // Date de naissance
-    city: user.city,            // Ville de résidence
+    userId: user.userId, // Identifiant unique de l'utilisateur
+    email: user.email, // Adresse email principale
+    firstName: user.firstName, // Prénom
+    lastName: user.lastName, // Nom de famille
+    birthDate: user.birthDate, // Date de naissance
+    city: user.city, // Ville de résidence
     phoneNumber: user.phoneNumber, // Numéro de téléphone
     urlImageUser: user.urlImageUser, // URL de la photo de profil
   };
@@ -30,32 +32,40 @@ export const getBasicUserInfo = (user: any) => {
  * @param annonceWithUser - L'objet contenant l'annonce et les informations de l'utilisateur
  * @returns Un objet contenant uniquement les propriétés essentielles de l'annonce
  */
-export const getAnnonceInfo = (annonceWithUser: any) => {
+export const getAnnonceInfo = (annonce: any) => {
   return {
-    annonceId: annonceWithUser.annonce.annonceId, // Identifiant unique de l'annonce
-    title: annonceWithUser.annonce.title,         // Titre de l'annonce
-    images: annonceWithUser.annonce.images,       // Images de l'annonce
-    transaction: annonceWithUser.annonce.transaction, // Type de transaction
-    vehicle: {
-      vehicleId: annonceWithUser.annonce.vehicle.vehicleId, // Identifiant du véhicule
-      condition: annonceWithUser.annonce.vehicle.condition, // État du véhicule
-      description: annonceWithUser.annonce.vehicle.description, // Description du véhicule
-      mark: annonceWithUser.annonce.vehicle.mark,           // Marque du véhicule
-      model: annonceWithUser.annonce.vehicle.model,         // Modèle du véhicule
-      year: annonceWithUser.annonce.vehicle.year,           // Année du véhicule
-      gearbox: annonceWithUser.annonce.vehicle.gearbox,     // Type de boîte de vitesses
-      fuelType: annonceWithUser.annonce.vehicle.fuelType,   // Type de carburant
-      klmCounter: annonceWithUser.annonce.vehicle.klmCounter, // Kilométrage
-      climatisation: annonceWithUser.annonce.vehicle.climatisation, // Climatisation
-      type: annonceWithUser.annonce.vehicle.type,           // Type de véhicule
+    annonce: {
+      annonceId: annonce.annonce.annonceId,
+      title: annonce.annonce.title,
+      images: annonce.annonce.images,
+      transaction: annonce.annonce.transaction,
+      vehicle: {
+        vehicleId: annonce.annonce.vehicle.vehicleId,
+        condition: annonce.annonce.vehicle.condition,
+        description: annonce.annonce.vehicle.description,
+        mark: annonce.annonce.vehicle.mark,
+        model: annonce.annonce.vehicle.model,
+        year: annonce.annonce.vehicle.year,
+        gearbox: annonce.annonce.vehicle.gearbox,
+        fuelType: annonce.annonce.vehicle.fuelType,
+        klmCounter: annonce.annonce.vehicle.klmCounter,
+        climatisation: annonce.annonce.vehicle.climatisation,
+        type: annonce.annonce.vehicle.type,
+      },
+      price: annonce.annonce.price,
+      city: annonce.annonce.city,
+      phoneNumber: annonce.annonce.phoneNumber,
+      quantity: annonce.annonce.quantity,
+      annonceState: annonce.annonce.annonceState,
+      endDate: annonce.annonce.endDate,
+      premium: annonce.annonce.premium,
+      premiumExpiration: annonce.annonce.premiumExpiration,
     },
-    price: annonceWithUser.annonce.price,                 // Prix de l'annonce
-    city: annonceWithUser.annonce.city,                   // Ville de l'annonce
-    phoneNumber: annonceWithUser.annonce.phoneNumber,     // Numéro de téléphone
-    quantity: annonceWithUser.annonce.quantity,           // Quantité
-    annonceState: annonceWithUser.annonce.annonceState,   // État de l'annonce
-    endDate: annonceWithUser.annonce.endDate,             // Date de fin de l'annonce
-    premium: annonceWithUser.annonce.premium,             // Statut premium
-    premiumExpiration: annonceWithUser.annonce.premiumExpiration, // Date d'expiration du premium
+    user: {
+      userId: annonce.user.userId,
+      firstName: annonce.user.firstName,
+      lastName: annonce.user.lastName,
+      urlImageUser: annonce.user.urlImageUser,
+    },
   };
-}
+};

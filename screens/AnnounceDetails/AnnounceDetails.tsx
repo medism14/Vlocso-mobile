@@ -31,46 +31,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { annonceWithUserInterface } from "../../types/annonce";
 
 interface AnnounceDetailsProps {
   navigation: any;
   route: any;
-}
-
-interface AnnonceItem {
-  annonce: {
-    annonceId: number;
-    title: string;
-    images: Array<{ imageUrl: string }>;
-    transaction: string;
-    vehicle: {
-      vehicleId: number;
-      condition: string;
-      description: string;
-      mark: string;
-      model: string;
-      year: number;
-      gearbox: string;
-      fuelType: string;
-      klmCounter: number;
-      climatisation: string;
-      type: string;
-    };
-    price: number;
-    city: string;
-    phoneNumber: string;
-    quantity: number;
-    annonceState: string;
-    endDate: string;
-    premium: boolean;
-    premiumExpiration: string;
-  };
-  user: {
-    userId: number;
-    firstName: string;
-    lastName: string;
-    urlImageUser: string;
-  };
 }
 
 /**
@@ -81,17 +46,20 @@ const AnnounceDetails: React.FC<AnnounceDetailsProps> = ({
   navigation,
   route,
 }) => {
-  const { item } = route.params;
+  const { item }: { item: annonceWithUserInterface } = route.params;
+
   const user = useSelector((state: any) => state.auth.userLogin);
 
   // États pour gérer l'affichage et la navigation
-  const [headerTitle, setHeaderTitle] = useState(item.annonce.title);
-  const [actualItem, setActualItem] = useState<AnnonceItem>(item);
+  // const [headerTitle, setHeaderTitle] = useState(item.annonce.title);
+  const [actualItem, setActualItem] = useState<annonceWithUserInterface>(item);
   const [loading, setLoading] = useState(false);
   const [firstLoading, setFirstLoading] = useState(true);
+
   const [articleSimilaire, setArticleSimilaire] = useState(
     actualItem.annonce.vehicle.type === "Voiture" ? voitures : motos
   );
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -129,12 +97,12 @@ const AnnounceDetails: React.FC<AnnounceDetailsProps> = ({
    * Redirige vers l'authentification si l'utilisateur n'est pas connecté
    */
   useEffect(() => {
-    if (!user) {
-      navigation.navigate("AuthStack");
-    }
+    // if (!user) {
+    //   navigation.navigate("AuthStack");
+    // }
 
     if (!firstLoading) {
-      setHeaderTitle(actualItem.annonce.title);
+      // setHeaderTitle(actualItem.annonce.title);
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
@@ -158,6 +126,17 @@ const AnnounceDetails: React.FC<AnnounceDetailsProps> = ({
           animated: true,
         });
       }
+    }
+  };
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "BottomBar" }],
+      });
     }
   };
 
@@ -201,7 +180,7 @@ const AnnounceDetails: React.FC<AnnounceDetailsProps> = ({
       // onScroll={handleScroll}
       scrollEventThrottle={16}
     >
-      <PageHeader onPress={() => navigation.goBack()} title={headerTitle} />
+      <PageHeader onPress={() => handleGoBack()} title={item.annonce.title} />
       <View style={styles.pageStyle}>
         {/* Section d'affichage des images */}
         <DisplayImagesDetails images={actualItem.annonce.images} />
@@ -222,9 +201,18 @@ const AnnounceDetails: React.FC<AnnounceDetailsProps> = ({
           {/* Section profil vendeur et boutons d'action */}
           <View style={styles.userPartContainer}>
             <View style={styles.userInfoContainer}>
-              {actualItem.user.urlImageUser && (
+              {actualItem.user.urlImageUser ? (
                 <Image
                   source={{ uri: actualItem.user.urlImageUser }}
+                  style={styles.userInfoImage}
+                  resizeMode="stretch"
+                />
+              ) : (
+                <Image
+                  // source={{ uri: actualItem.user.urlImageUser }}
+                  source={{
+                    uri: "https://e7.pngegg.com/pngimages/550/997/png-clipart-user-icon-foreigners-avatar-child-face.png",
+                  }}
                   style={styles.userInfoImage}
                   resizeMode="stretch"
                 />
@@ -249,7 +237,9 @@ const AnnounceDetails: React.FC<AnnounceDetailsProps> = ({
                     : "Afficher son numéro"
                 }
                 color={showPhoneNumber ? colors.primary : colors.tertiary}
-                backgroundColor={showPhoneNumber ? colors.tertiary : colors.primary}
+                backgroundColor={
+                  showPhoneNumber ? colors.tertiary : colors.primary
+                }
                 onPress={() => setShowPhoneNumber(!showPhoneNumber)}
               />
             </View>

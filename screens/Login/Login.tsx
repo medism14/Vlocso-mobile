@@ -17,11 +17,7 @@ import {
   ProviderAuth,
   ErrorText,
 } from "../../components";
-import {
-  faEnvelope,
-  faKey,
-  faKitchenSet,
-} from "@fortawesome/free-solid-svg-icons";
+import { faEnvelope, faKey } from "@fortawesome/free-solid-svg-icons";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { colors } from "../../globals/colors";
 import { useSelector } from "react-redux";
@@ -67,7 +63,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       const response = await api.post("/auth/login", data);
 
       if (response.status === 200) {
-        const { data: userData, message } = await response.data;
+        const { data: userData } = await response.data;
         const { user, tokens } = userData;
         const { accessToken, refreshToken } = tokens;
 
@@ -100,9 +96,8 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         timeoutLoginError();
         resetFormAfterTime();
       }
-    } finally {
-      setButtonDisabled(false);
     }
+    setButtonDisabled(false);
   };
 
   /**

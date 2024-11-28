@@ -2,16 +2,25 @@
 
 /**
  * Composant ProductItemVertical - Affiche un produit dans une disposition verticale
- * 
+ *
  * Ce composant réutilisable permet d'afficher les informations d'un produit
  * dans une carte verticale avec image, titre, prix et autres détails.
  */
 
-import { Image, StyleSheet, Text, View, Platform, Pressable, Dimensions } from "react-native";
-import React from "react";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  Platform,
+  Pressable,
+  Dimensions,
+} from "react-native";
+import React, { useEffect } from "react";
 import { ms } from "react-native-size-matters";
 import { colors } from "../../globals/colors";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { annonceWithUserInterface } from "../../types/annonce";
 
 /**
  * Interface définissant les props du composant
@@ -20,15 +29,18 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
  * @param onPress - Fonction appelée lors du clic sur le produit
  */
 interface ProductItemVerticalProps {
-  item: any;
+  item: annonceWithUserInterface;
   allSpace: number;
-  onPress: () => void,
+  onPress: () => void;
 }
 
-const ProductItemVertical: React.FC<ProductItemVerticalProps> = ({ item, allSpace, onPress }) => {
-
+const ProductItemVertical: React.FC<ProductItemVerticalProps> = ({
+  item,
+  allSpace,
+  onPress,
+}) => {
   const navigation = useNavigation<NavigationProp<any>>();
-    
+
   // Calcul de la largeur de l'élément (48% de l'espace disponible)
   const width = (Dimensions.get("window").width - ms(allSpace)) * 0.48;
 
@@ -37,7 +49,7 @@ const ProductItemVertical: React.FC<ProductItemVerticalProps> = ({ item, allSpac
       {/* Container de l'image du produit */}
       <View style={styles.imageContainer}>
         <Image
-          source={item.images[0]}
+          source={{ uri: item.annonce.images.length > 0 ? item.annonce.images[0].imageUrl : undefined }}
           style={{ width: "100%", height: "100%", borderRadius: ms(15) }}
           resizeMode="cover"
         />
@@ -47,19 +59,21 @@ const ProductItemVertical: React.FC<ProductItemVerticalProps> = ({ item, allSpac
       <View style={styles.content}>
         {/* Titre et type de transaction */}
         <View>
-          <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-          <Text style={styles.transaction}>{item.transaction}</Text>
+          <Text style={styles.title} numberOfLines={2}>
+            {item.annonce.title}
+          </Text>
+          <Text style={styles.transaction}>{item.annonce.transaction}</Text>
         </View>
-        
+
         {/* État du produit */}
         <View style={styles.conditionContainer}>
-          <Text style={styles.condition}>{item.condition}</Text>
+          <Text style={styles.condition}>{item.annonce.vehicle.condition}</Text>
         </View>
-        
+
         {/* Prix et localisation */}
         <View>
-          <Text style={styles.price}>{item.price}€</Text>
-          <Text style={styles.city}>{item.city}</Text>
+          <Text style={styles.price}>{item.annonce.price}€</Text>
+          <Text style={styles.city}>{item.annonce.city}</Text>
         </View>
       </View>
     </Pressable>
@@ -77,7 +91,7 @@ const styles = StyleSheet.create({
     borderWidth: ms(2),
     borderColor: colors.accentGray,
     borderRadius: ms(15),
-    height: Platform.OS == "ios" ? ms(260) : ms(280), // Hauteur adaptée selon la plateforme
+    height: Platform.OS === "ios" ? ms(260) : ms(280), // Hauteur adaptée selon la plateforme
     overflow: "hidden",
     backgroundColor: colors.primary,
   },
@@ -86,7 +100,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: ms(15),
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   content: {
     flex: 0.4, // 40% de la hauteur pour le contenu
@@ -120,7 +134,7 @@ const styles = StyleSheet.create({
   },
   conditionContainer: {
     borderColor: colors.tertiary,
-    paddingVertical: Platform.OS == "ios" ? ms(1) : ms(0), // Ajustement du padding vertical selon la plateforme
+    paddingVertical: Platform.OS === "ios" ? ms(1) : ms(0), // Ajustement du padding vertical selon la plateforme
     paddingHorizontal: ms(8),
     borderRadius: ms(8),
     borderWidth: ms(1),

@@ -80,7 +80,7 @@ const Profil: React.FC<ProfileProps> = ({ navigation }) => {
         aspect: [1, 1],
         quality: 1,
       });
-      
+
       if (!result.canceled) {
         const imageUrl = await uploadImage(result.assets[0].uri);
 
@@ -154,7 +154,7 @@ const Profil: React.FC<ProfileProps> = ({ navigation }) => {
     } finally {
       setModalVisible({
         state: false,
-        type: []
+        type: [],
       });
       setImageLoading(false);
     }
@@ -168,7 +168,7 @@ const Profil: React.FC<ProfileProps> = ({ navigation }) => {
     try {
       const refreshToken = await AsyncStorage.getItem("@refreshToken");
       await api.post("/auth/logout", { refreshToken });
-      
+
       dispatch(setUserLogin(null));
       await AsyncStorage.removeItem("@accessToken");
       await AsyncStorage.removeItem("@refreshToken");
@@ -176,7 +176,10 @@ const Profil: React.FC<ProfileProps> = ({ navigation }) => {
         routes: [{ name: "BottomBar" }],
       });
     } catch (error) {
-      console.error("Erreur lors de la déconnexion de l'utilisateurqsdf:", error);
+      console.error(
+        "Erreur lors de la déconnexion de l'utilisateur:",
+        error
+      );
     }
   };
 

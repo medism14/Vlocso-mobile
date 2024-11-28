@@ -98,6 +98,7 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
           resetToHome();
           dispatch(setReinitialiseUserProvider());
         } catch (error) {
+          console.error(error);
           if (error.response.status == 500) {
             setRegisterError(
               "Une erreur est survenue lors de l'enregistrement, veuillez réessayez"

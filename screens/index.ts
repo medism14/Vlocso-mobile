@@ -12,8 +12,8 @@ import PasswordRecovery from "./PasswordRecovery/PasswordRecovery"
 import PremiumSubscription from "./PremiumSubscription/PremiumSubscription"
 import ProfilInformations from "./ProfilInformations/ProfilInformations"
 import ProfilPassword from "./ProfilPassword/ProfilPassword"
-import NewPost from "./NewPost/NewPost"
 import MyAnnounces from "./MyAnnounces/MyAnnounces"
+import RelaunchPost from "./RelaunchPost/RelaunchPost"
 
 
 
@@ -32,6 +32,6 @@ export {
     PremiumSubscription,
     ProfilInformations,
     ProfilPassword,
-    NewPost,
     MyAnnounces,
+    RelaunchPost,
 }

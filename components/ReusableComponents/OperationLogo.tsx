@@ -52,5 +52,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Bold",
     textDecorationLine: "underline",
     color: colors.textColor,
+    textAlign: "center"
   },
 });

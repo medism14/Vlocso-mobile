@@ -19,57 +19,40 @@ import React, { useEffect } from "react";
 import { ms } from "react-native-size-matters";
 import { colors } from "../../globals/colors";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { annonceWithUserInterface } from "../../types/annonce";
+import { useDispatch } from "react-redux";
+import { incrementImagesLoad } from "../../redux/features/imagesLoads";
 
 /**
  * Interface définissant les props du composant
  * @param item - Objet contenant les données du produit à afficher
  */
 interface ProductItemHorizontalProps {
-  item: {
-    annonce: {
-      annonceId: number;
-      title: string;
-      images: Array<{ imageUrl: string }>;
-      transaction: string;
-      vehicle: {
-        vehicleId: number;
-        condition: string;
-        description: string;
-        mark: string;
-        model: string;
-        year: number;
-        gearbox: string;
-        fuelType: string;
-        klmCounter: string;
-        climatisation: string;
-        type: string;
-      };
-      price: string;
-      city: string;
-      phoneNumber: string;
-      quantity: number;
-      annonceState: string;
-      endDate: string;
-      premium: boolean;
-      premiumExpiration: string;
-    };
-    user: {
-      userId: number;
-      firstName: string;
-      lastName: string;
-      urlImageUser: string;
-    };
-  };
+  item: annonceWithUserInterface;
+  utility: string;
+  setNumberImagesLoaded?: any;
+  loadCheck: boolean;
 }
 
 const ProductItemHorizontal: React.FC<ProductItemHorizontalProps> = ({
   item,
+  utility,
+  loadCheck = false,
 }) => {
   const navigation = useNavigation<NavigationProp<any>>();
+  const dispatch = useDispatch();
+
+  const incrementImageLoad = () => {
+    dispatch(incrementImagesLoad());
+  };
 
   return (
     <Pressable
-      onPress={() => navigation.navigate("AnnounceEdit", { item })}
+      onPress={() =>
+        utility == "view"
+          ? navigation.navigate("AnnounceDetails", { item })
+          : navigation.navigate("AnnounceEdit", { item })
+      }
       style={styles.container}
     >
       {/* Container de l'image du produit */}
@@ -78,6 +61,7 @@ const ProductItemHorizontal: React.FC<ProductItemHorizontalProps> = ({
           source={{ uri: item.annonce.images[0]?.imageUrl }}
           style={{ width: "100%", height: "100%", borderRadius: ms(15) }}
           resizeMode="stretch"
+          onLoad={loadCheck && incrementImageLoad}
         />
       </View>
 
@@ -119,13 +103,13 @@ const styles = StyleSheet.create({
     borderWidth: ms(2),
     borderColor: colors.accentGray,
     borderRadius: ms(15),
-    flexDirection: "row", // Layout horizontal
+    flexDirection: "row",
     height: ms(145),
     overflow: "hidden",
     backgroundColor: colors.primary,
   },
   imageContainer: {
-    flex: 0.4, // 40% de l'espace horizontal
+    flex: 0.4,
     backgroundColor: colors.primary,
     borderRadius: ms(13),
     alignItems: "center",
@@ -135,7 +119,7 @@ const styles = StyleSheet.create({
     borderRightWidth: ms(2),
   },
   content: {
-    flex: 0.6, // 60% de l'espace horizontal
+    flex: 0.6,
     padding: ms(10),
     justifyContent: "space-between",
   },
@@ -165,7 +149,7 @@ const styles = StyleSheet.create({
   },
   conditionContainer: {
     borderColor: colors.tertiary,
-    paddingVertical: Platform.OS == "ios" ? ms(3) : ms(0), // Ajustement selon la plateforme
+    paddingVertical: Platform.OS == "ios" ? ms(3) : ms(0),
     padding: ms(10),
     borderRadius: ms(10),
     borderWidth: ms(1),

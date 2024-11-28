@@ -2,10 +2,10 @@
 
 /**
  * Composant PageHeader - En-tête de page réutilisable avec navigation
- * 
+ *
  * Ce composant fournit une barre d'en-tête standard avec:
  * - Un bouton retour à gauche
- * - Un titre optionnel au centre 
+ * - Un titre optionnel au centre
  * - Un bouton d'annulation optionnel à droite
  */
 
@@ -28,20 +28,20 @@ interface PageHeaderProps {
   onPress: () => void;
   title?: string;
   marginB?: any;
-  color?: string;
   cancelPress?: () => void;
+  children?: React.ReactNode;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
   onPress,
   title = "",
-  color = "white",
   cancelPress,
+  children,
 }) => {
   return (
-    <View style={[styles.homeButton]}>
+    <View style={styles.homeButton}>
       {/* Conteneur gauche avec bouton retour et titre */}
-      <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
         {/* Bouton retour avec effet de pression */}
         <Pressable
           onPress={onPress}
@@ -61,13 +61,17 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         {title && (
           <Text
             style={styles.homeButtonText}
-            numberOfLines={1} 
+            numberOfLines={1}
             ellipsizeMode="tail"
           >
             {title}
           </Text>
         )}
       </View>
+
+      {children && !title && (
+        <View style={{ flex: 1, marginRight: ms(20) }}>{children}</View>
+      )}
 
       {/* Bouton d'annulation optionnel */}
       {cancelPress && (

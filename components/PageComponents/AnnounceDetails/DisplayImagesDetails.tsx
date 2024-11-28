@@ -53,7 +53,7 @@ const DisplayImagesDetails: React.FC<DisplayImagesDetailsProps> = ({
         data={images}
         renderItem={({ item }) => (
           <Image
-            source={{uri: item.imageUrl}}
+            source={{uri: item.imageUrl }}
             style={[styles.image, { width: width }]}
             resizeMode={"stretch"}
           />
