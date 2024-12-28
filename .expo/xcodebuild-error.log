@@ -1,3 +1,6 @@
---- xcodebuild: WARNING: Using the first of multiple matching destinations:
-{ platform:iOS Simulator, id:7F6880E0-C8DB-410A-BAD0-CB96A6B62136, OS:17.5, name:iPhone 15 Pro Max }
-{ platform:iOS Simulator, id:7F6880E0-C8DB-410A-BAD0-CB96A6B62136, OS:17.5, name:iPhone 15 Pro Max }
+2024-12-28 15:27:32.375 xcodebuild[44905:2812973] Writing error result bundle to /var/folders/wd/84fjhmx954j0kfhz1pp7sznm0000gn/T/ResultBundle_2024-28-12_15-27-0032.xcresult
+xcodebuild: error: Unable to find a destination matching the provided destination specifier:
+		{ id:57F20642-0342-46B3-BD5A-5FDD33993A5D }
+
+	Ineligible destinations for the "Vlocso" scheme:
+		{ platform:iOS, id:dvtdevice-DVTiPhonePlaceholder-iphoneos:placeholder, name:Any iOS Device, error:iOS 18.2 is not installed. To use with Xcode, first download and install the platform }

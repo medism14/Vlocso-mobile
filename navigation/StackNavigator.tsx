@@ -31,7 +31,9 @@ import {
   Register,
   RelaunchPost,
   Search,
+  Conversation,
 } from "../screens";
+
 import { TabBar } from "../components";
 import { useSelector } from "react-redux";
 import PostPage from "../screens/PostPage/PostPage";
@@ -136,11 +138,6 @@ const HomeStack: React.FC = () => {
         component={Home}
         options={{ title: "Home", headerShown: false }}
       />
-      {/* <Stack.Screen
-        name="ProductDetails"
-        component={ProductDetails}
-        options={{ headerShown: false }}
-      /> */}
     </Stack.Navigator>
   );
 };
@@ -277,6 +274,12 @@ const StackNavigator: React.FC = () => {
           name="PremiumSubscription"
           component={PremiumSubscription}
           options={{ title: "PremiumSubscription", headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="Conversation"
+          component={Conversation}
+          options={{ title: "Conversation", headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

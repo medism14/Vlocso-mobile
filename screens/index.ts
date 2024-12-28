@@ -14,7 +14,7 @@ import ProfilInformations from "./ProfilInformations/ProfilInformations"
 import ProfilPassword from "./ProfilPassword/ProfilPassword"
 import MyAnnounces from "./MyAnnounces/MyAnnounces"
 import RelaunchPost from "./RelaunchPost/RelaunchPost"
-
+import Conversation from "./Messages/Conversation";
 
 
 export {
@@ -34,4 +34,5 @@ export {
     ProfilPassword,
     MyAnnounces,
     RelaunchPost,
+    Conversation,
 }

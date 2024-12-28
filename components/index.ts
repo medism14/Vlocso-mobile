@@ -34,7 +34,6 @@ import SuccessText from "./ReusableComponents/SuccessText";
 import Loading from "./ReusableComponents/Loading";
 import ModalImage from "./ReusableComponents/ModalImage";
 import SearchRow from "./PageComponents/Search/SearchRow";
-import Conversation from "./PageComponents/Messages/Conversation";
 import MessageRow from "./PageComponents/Messages/MessageRow";
 
 export {
@@ -74,6 +73,5 @@ export {
     Loading,
     ModalImage,
     SearchRow,
-    Conversation,
     MessageRow,
 }

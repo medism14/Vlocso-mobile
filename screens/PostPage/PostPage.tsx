@@ -115,6 +115,46 @@ const fuelTypeItems = [
   { label: "Hybride", value: "Hybride" },
 ];
 
+const colorItems = [
+  { label: "Rouge", value: "Rouge" },
+  { label: "Bleu", value: "Bleu" },
+  { label: "Vert", value: "Vert" },
+  { label: "Noir", value: "Noir" },
+  { label: "Blanc", value: "Blanc" },
+  { label: "Gris", value: "Gris" },
+  { label: "Jaune", value: "Jaune" },
+  { label: "Orange", value: "Orange" },
+  { label: "Violet", value: "Violet" },
+  { label: "Rose", value: "Rose" },
+];
+
+const categoryItemsCars = [
+  { label: "Sport", value: "Sport" },
+  { label: "SUV", value: "SUV" },
+  { label: "Berline", value: "Berline" },
+  { label: "Coupé", value: "Coupé" },
+  { label: "Hatchback", value: "Hatchback" },
+  { label: "Break", value: "Break" },
+  { label: "Pick-up", value: "Pick-up" },
+  { label: "Monospace", value: "Monospace" },
+  { label: "Crossover", value: "Crossover" },
+  { label: "Roadster", value: "Roadster" },
+  { label: "Utilitaire", value: "Utilitaire" },
+];
+
+const categoryItemsMotos = [
+  { label: "Sport", value: "Sport" },
+  { label: "Cruiser", value: "Cruiser" },
+  { label: "Touring", value: "Touring" },
+  { label: "Standard", value: "Standard" },
+  { label: "Dual-Sport", value: "Dual-Sport" },
+  { label: "Adventure", value: "Adventure" },
+  { label: "Chopper", value: "Chopper" },
+  { label: "Cafe Racer", value: "Cafe Racer" },
+  { label: "Electric", value: "Electric" },
+  { label: "Scooter", value: "Scooter" },
+];
+
 const PostPage: React.FC<PostPageProps> = ({ navigation, route }) => {
   // État pour gérer les étapes du formulaire et les données
   let item: annonceWithUserInterface | null = null;
@@ -123,7 +163,7 @@ const PostPage: React.FC<PostPageProps> = ({ navigation, route }) => {
     item = route.params.item;
   }
 
-  const [step, setStep] = useState(5);
+  const [step, setStep] = useState(1);
   const totalStep = 4;
   const {
     control,

@@ -4,12 +4,14 @@ import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import globalStyles from "../../globals/globalStyles";
 import { ScrollView } from "react-native-gesture-handler";
-import { Conversation, MessageRow, PageHeader } from "../../components";
+import { MessageRow, PageHeader } from "../../components";
 import { ms } from "react-native-size-matters";
 import { colors } from "../../globals/colors";
 import { conversations } from "../../constants/conversationsAndMessages";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faComments } from "@fortawesome/free-solid-svg-icons";
+import Conversation from "./Conversation";
+import { ConversationType } from "../../types/conversations";
 
 interface MessagesProps {
   navigation: any;
@@ -21,65 +23,32 @@ enum MessagerieState {
 }
 
 const Messages: React.FC<MessagesProps> = ({ navigation }) => {
-  const [messagerieState, setMessagerieState] = useState(
-    MessagerieState.ConversationsList
-  );
-  const [conversation, setConversation] = useState<any>(null);
-
-  const handleNavigateConversation = (conversation: any) => {
-    setConversation(conversation);
-    setMessagerieState(MessagerieState.Conversation);
-  };
-
-  const handleGoBack = () => {
-    if (messagerieState === MessagerieState.ConversationsList) {
-      navigation.goBack();
-    } else {
-      setMessagerieState(MessagerieState.ConversationsList);
-    }
+  const handleNavigateConversation = (conversation: ConversationType) => {
+    navigation.navigate('Conversation', { 
+      conversation: JSON.parse(JSON.stringify(conversation))
+     });
   };
 
   return (
     <View style={styles.pageStyle}>
-      <PageHeader onPress={() => handleGoBack()}>
-        {messagerieState === MessagerieState.Conversation && conversation && (
-          <View style={styles.userInfo}>
-            <Image
-              source={{ uri: conversation.annonce.user.urlImageUser }}
-              style={styles.userImage}
-              resizeMode="cover"
-            />
-            <Text style={styles.userName}>
-              {conversation.annonce.user.firstName}{" "}
-              {conversation.annonce.user.lastName}
-            </Text>
-          </View>
-        )}
+      <PageHeader onPress={() => navigation.goBack()}>
+        <View style={styles.title}>
+          <FontAwesomeIcon size={ms(26)} icon={faComments} />
+          <Text style={styles.titleText}>Mes discussions</Text>
+        </View>
       </PageHeader>
-      {messagerieState === MessagerieState.ConversationsList && (
-        <>
-          <View style={styles.title}>
-            <FontAwesomeIcon size={ms(26)} icon={faComments} />
-            <Text style={styles.titleText}>Mes discussions</Text>
-          </View>
 
-          <View style={styles.conversationDisplay}>
-            <ScrollView style={styles.conversationDisplayBody}>
-              {conversations.map((conversation: any, index: number) => (
-                <MessageRow
-                  key={index}
-                  conversation={conversation}
-                  onPress={() => handleNavigateConversation(conversation)}
-                />
-              ))}
-            </ScrollView>
-          </View>
-        </>
-      )}
-
-      {messagerieState === MessagerieState.Conversation && conversation && (
-        <Conversation conversation={conversation} navigation={navigation} />
-      )}
+      <View style={styles.conversationDisplay}>
+        <ScrollView style={styles.conversationDisplayBody}>
+          {conversations.map((conversation: any, index: number) => (
+            <MessageRow
+              key={index}
+              conversation={conversation}
+              onPress={() => handleNavigateConversation(conversation)}
+            />
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 };
@@ -102,10 +71,8 @@ const styles = StyleSheet.create({
     gap: ms(10),
     alignItems: "center",
     justifyContent: "center",
-    borderBottomWidth: ms(2),
-    borderBottomColor: colors.accentGray,
-    paddingTop: ms(15),
-    paddingBottom: ms(15),
+    paddingTop: ms(10),
+    paddingBottom: ms(10),
   },
   titleText: {
     fontSize: ms(24),
